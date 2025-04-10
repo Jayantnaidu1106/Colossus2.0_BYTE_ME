@@ -1,0 +1,26 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  password    String
+  standard    String?
+  email       String   @unique
+  createdAt   DateTime @default(now())
+  weaktopics  String[]
+  result      Json?
+  onlineDates Json?    // Stores an array of online dates (e.g., for a contribution graph)
+  amount      Float?   // Nullable field for storing an amount value
+}

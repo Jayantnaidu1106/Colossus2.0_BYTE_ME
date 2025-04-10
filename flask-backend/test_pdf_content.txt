@@ -1,0 +1,13 @@
+Test PDF Document
+
+This is a test PDF document to verify that the PDF summarizer works correctly. This document contains multiple sentences that should be properly extracted and summarized by the PDF summarizer.
+
+The PDF summarizer should extract the text from this document and generate a summary based on the most important sentences. The summary should be displayed in the UI and should be downloadable as a text file.
+
+The PDF summarizer uses a simple algorithm to identify the most important sentences in the document. It calculates the frequency of each word in the document and scores each sentence based on the average frequency of its words.
+
+This approach is simple but effective for generating useful summaries of documents. It works well for documents with clear structure and content, but may struggle with documents that contain complex layouts, tables, or images.
+
+In addition to the summary, the PDF summarizer also displays the original text extracted from the document. This allows users to compare the summary with the original text and verify that the summary accurately represents the content of the document.
+
+The PDF summarizer is a useful tool for quickly understanding the key points of a document without having to read the entire text. It can save time and help users focus on the most important information in a document.
