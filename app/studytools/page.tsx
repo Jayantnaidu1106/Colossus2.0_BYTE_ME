@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, MessageSquare, Mic, Sun, Moon } from "lucide-react"
+import { FileText, MessageSquare, Mic, Sun, Moon, UserRound } from "lucide-react"
 import router from "next/router"
 
 
@@ -65,7 +65,7 @@ export default function Home() {
           </Button>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* PDF Summarizer Card */}
           <Card
             onClick={() => router.push("/studytools/pdfsummarizer")}
@@ -160,6 +160,37 @@ export default function Home() {
               onClick={handleClick}
               >
                 Start Voice Assistant
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* AI Mock Interview Card */}
+          <Card
+            onClick={() => router.push("/studytools/mockinterview")}
+            className={`overflow-hidden ${
+              isDarkMode
+                ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white border-gray-700"
+                : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+            } hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/5 pointer-events-none" />
+            <CardHeader className="relative z-10">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                <UserRound className="h-6 w-6 text-amber-600" />
+              </div>
+              <CardTitle className="text-xl">AI Mock Interview</CardTitle>
+              <CardDescription className={isDarkMode ? "text-gray-300" : "text-gray-500"}>
+                Practice interview skills with AI feedback
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <p className={isDarkMode ? "text-gray-300" : "text-gray-600"}>
+                Simulate job interviews with our AI interviewer and receive instant feedback to improve your performance.
+              </p>
+            </CardContent>
+            <CardFooter className="relative z-10">
+              <Button className="bg-amber-600 hover:bg-amber-700 text-white">
+                Start Mock Interview
               </Button>
             </CardFooter>
           </Card>

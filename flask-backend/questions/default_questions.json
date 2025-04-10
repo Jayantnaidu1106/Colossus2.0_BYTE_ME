@@ -1,0 +1,23 @@
+{
+    "general": [
+        "Tell me about yourself.",
+        "What are your strengths and weaknesses?",
+        "Why do you want to work for this company?",
+        "Where do you see yourself in 5 years?",
+        "Describe a challenging situation you faced and how you handled it."
+    ],
+    "technical": [
+        "Explain the difference between arrays and linked lists.",
+        "What is object-oriented programming?",
+        "How would you optimize a slow database query?",
+        "Explain the concept of recursion with an example.",
+        "What is the difference between HTTP and HTTPS?"
+    ],
+    "behavioral": [
+        "Describe a time when you had to work with a difficult team member.",
+        "Tell me about a project you're particularly proud of.",
+        "How do you handle criticism?",
+        "Describe your leadership style.",
+        "How do you prioritize tasks when you have multiple deadlines?"
+    ]
+}
