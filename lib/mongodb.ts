@@ -1,5 +1,12 @@
 import { MongoClient } from 'mongodb';
 
+// This ensures this module only runs on the server side
+const isServer = typeof window === 'undefined';
+
+if (!isServer) {
+  throw new Error('MongoDB client should only be used on the server side');
+}
+
 if (!process.env.DATABASE_URL) {
   throw new Error('Please add your MongoDB connection string to .env');
 }

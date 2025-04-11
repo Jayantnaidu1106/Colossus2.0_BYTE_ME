@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'react-hot-toast';
+
 import React, { useState, useRef, useEffect } from 'react';
 
 // Add TypeScript declarations for the Web Speech API
@@ -152,18 +154,42 @@ export default function MockInterviewPage() {
         // Check if camera was successfully enabled
         if (!cameraSuccess) {
           console.log('Camera could not be enabled');
-          alert('Camera access is required for the interview. Please enable your camera and try again.');
+          toast.error('Camera access is required for the interview. Please enable your camera and try again.');
           return;
         }
       } catch (error) {
         console.error('Failed to enable camera:', error);
-        alert('Camera access is required for the interview. Please enable your camera and try again.');
+        toast.error('Camera access is required for the interview. Please enable your camera and try again.');
         return;
       }
     }
 
     setIsLoading(true);
     try {
+      console.log('Starting interview with type:', selectedType);
+
+      // Check if the Flask server is running
+      try {
+        // First try to ping the server
+        const pingResponse = await fetch('/api/interview/ping', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).catch(e => {
+          console.error('Ping failed:', e);
+          return { ok: false, status: 0 };
+        });
+
+        if (!pingResponse.ok) {
+          console.warn('Flask server may not be running. Status:', pingResponse.status);
+          throw new Error('Interview server may not be running. Using offline mode.');
+        }
+      } catch (pingError) {
+        console.warn('Ping error:', pingError);
+        // Continue with the interview attempt anyway
+      }
+
       const response = await fetch('/api/interview/start', {
         method: 'POST',
         headers: {
@@ -175,11 +201,16 @@ export default function MockInterviewPage() {
         }),
       });
 
+      console.log('Interview start response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to start interview');
+        const errorText = await response.text();
+        console.error('Error response text:', errorText);
+        throw new Error(`Failed to start interview: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('Interview start response data:', data);
 
       if (data.success) {
         const questions = data.questions.map((q: string) => ({ question: q }));
@@ -200,12 +231,14 @@ export default function MockInterviewPage() {
             console.error('Failed to enable microphone:', error);
           }
         }
+
+        toast.success('Interview started successfully!');
       } else {
         throw new Error(data.error || 'Failed to start interview');
       }
     } catch (error) {
       console.error('Error starting interview:', error);
-      alert('Failed to start interview. Using offline questions.');
+      toast.error(`Interview server error: ${error.message}. Using offline questions.`);
 
       // Fallback to local questions if API fails
       const fallbackQuestions = [

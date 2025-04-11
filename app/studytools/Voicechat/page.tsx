@@ -401,28 +401,31 @@ export default function Home() {
     setIsProcessing(true);
 
     try {
-      const response = await fetch('/api/chat2', {
+      // Use the new voice-assistant API that connects to Google Gemini
+      const response = await fetch('/api/voice-assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText, email: 'test@example.com' }),
+        body: JSON.stringify({
+          message: messageText,
+          email: 'test@example.com' // In production, use the actual user email
+        }),
       });
 
       const data = await response.json();
 
       // Log the response data for debugging
-      console.log('API response data:', data);
+      console.log('Gemini API response data:', data);
 
       if (!response.ok) throw new Error(data.error || 'Failed to get response');
 
       // Extract the response text from the API response
-      // Our mock API returns the response in the 'text' property
       console.log('Response data structure:', Object.keys(data));
 
       let assistantResponseText = "Sorry, I couldn't process that request.";
 
       if (typeof data.text === 'string') {
         assistantResponseText = data.text;
-        console.log('Using text property:', assistantResponseText);
+        console.log('Using text property from Gemini:', assistantResponseText);
       } else if (typeof data.response === 'string') {
         assistantResponseText = data.response;
         console.log('Using response property:', assistantResponseText);
@@ -470,8 +473,8 @@ export default function Home() {
     <main className="flex flex-col h-screen bg-gray-100">
       {/* Header */}
       <header className="bg-blue-600 text-white p-4">
-        <h1 className="text-2xl font-bold">AI Voice Assistant</h1>
-        <p className="text-sm">Talk to the AI and hear responses</p>
+        <h1 className="text-2xl font-bold">AI Voice Assistant <span className="text-sm font-normal bg-blue-700 px-2 py-1 rounded ml-2">Powered by Gemini</span></h1>
+        <p className="text-sm">Ask questions and get spoken responses from Google's Gemini AI</p>
       </header>
 
       {/* Error Display */}
@@ -487,7 +490,8 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-gray-500 mt-10">
-            <p>Hello! How can I help you today?</p>
+            <p>Hello! I'm your educational voice assistant powered by Google Gemini.</p>
+            <p className="text-sm mt-2">Ask me questions about your studies, homework, or any educational topic.</p>
             <p className="text-sm mt-2">Click the microphone button to speak, or type your question below.</p>
           </div>
         )}

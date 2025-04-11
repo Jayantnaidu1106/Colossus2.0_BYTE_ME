@@ -3,11 +3,7 @@ from flask_cors import CORS
 import random
 import json
 import os
-import base64
-import numpy as np
 import time
-import threading
-import re
 from datetime import datetime
 
 app = Flask(__name__)
@@ -34,7 +30,7 @@ def ping():
 
 # Create directories for storing data
 def create_directories():
-    directories = ['questions', 'recordings', 'frames']
+    directories = ['questions']
     for directory in directories:
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -141,88 +137,6 @@ communication_feedback = {
 # Active interview sessions
 active_sessions = {}
 
-# Simulate AI analysis of video frames
-def analyze_video_frame(frame_data):
-    """
-    Simulates AI analysis of a video frame to detect eye contact, facial expressions, etc.
-    In a real implementation, this would use computer vision libraries like OpenCV and facial recognition.
-    """
-    # Simulate processing time
-    time.sleep(0.1)
-
-    # Generate random scores for demonstration purposes
-    # In a real implementation, these would be calculated using AI models
-    scores = {
-        "eye_contact": random.uniform(0.5, 1.0),
-        "facial_expressions": random.uniform(0.4, 0.9),
-        "posture": random.uniform(0.6, 1.0),
-        "engagement": random.uniform(0.5, 0.95)
-    }
-
-    return scores
-
-# Simulate AI analysis of audio
-def analyze_audio(audio_data):
-    """
-    Simulates AI analysis of audio to detect speaking pace, clarity, filler words, etc.
-    In a real implementation, this would use speech recognition and NLP libraries.
-    """
-    # Simulate processing time
-    time.sleep(0.1)
-
-    # Generate random scores for demonstration purposes
-    # In a real implementation, these would be calculated using AI models
-    scores = {
-        "speaking_pace": random.uniform(0.6, 0.95),
-        "voice_clarity": random.uniform(0.5, 0.9),
-        "filler_words": random.uniform(0.4, 0.85),
-        "tone": random.uniform(0.5, 0.9)
-    }
-
-    return scores
-
-# Function to save frame data (for demonstration purposes)
-def save_frame(session_id, question_idx, frame_data):
-    """Save a base64 encoded frame to disk"""
-    try:
-        # Create directory for this session if it doesn't exist
-        session_dir = os.path.join('frames', str(session_id))
-        if not os.path.exists(session_dir):
-            os.makedirs(session_dir)
-
-        # Save frame
-        frame_path = os.path.join(session_dir, f"q{question_idx}_{int(time.time())}.txt")
-        with open(frame_path, 'w') as f:
-            # In a real implementation, you would decode and save as an image
-            # Here we just save a placeholder to avoid large files
-            f.write(f"Frame data placeholder for session {session_id}, question {question_idx}")
-
-        return True
-    except Exception as e:
-        print(f"Error saving frame: {e}")
-        return False
-
-# Function to save audio data (for demonstration purposes)
-def save_audio(session_id, question_idx, audio_data):
-    """Save audio data to disk"""
-    try:
-        # Create directory for this session if it doesn't exist
-        session_dir = os.path.join('recordings', str(session_id))
-        if not os.path.exists(session_dir):
-            os.makedirs(session_dir)
-
-        # Save audio
-        audio_path = os.path.join(session_dir, f"q{question_idx}_{int(time.time())}.txt")
-        with open(audio_path, 'w') as f:
-            # In a real implementation, you would decode and save as an audio file
-            # Here we just save a placeholder to avoid large files
-            f.write(f"Audio data placeholder for session {session_id}, question {question_idx}")
-
-        return True
-    except Exception as e:
-        print(f"Error saving audio: {e}")
-        return False
-
 # API endpoint to start a new interview session
 @app.route('/api/interview/start', methods=['POST'])
 def start_interview():
@@ -268,14 +182,13 @@ def start_interview():
             'error': str(e)
         }), 500
 
-# API endpoint to process video frame
+# API endpoint to process video frame - simplified version without actual processing
 @app.route('/api/interview/process-frame', methods=['POST'])
 def process_frame():
     try:
         data = request.json
         session_id = data.get('session_id')
         question_idx = data.get('question_idx', 0)
-        frame_data = data.get('frame_data', '')  # Base64 encoded image
 
         if not session_id or session_id not in active_sessions:
             return jsonify({
@@ -286,11 +199,13 @@ def process_frame():
         # Update last activity timestamp
         active_sessions[session_id]['last_activity'] = datetime.now().isoformat()
 
-        # Save frame for analysis (in a real implementation)
-        save_frame(session_id, question_idx, frame_data)
-
-        # Analyze frame
-        frame_scores = analyze_video_frame(frame_data)
+        # Generate random scores for demonstration purposes
+        frame_scores = {
+            "eye_contact": random.uniform(0.5, 1.0),
+            "facial_expressions": random.uniform(0.4, 0.9),
+            "posture": random.uniform(0.6, 1.0),
+            "engagement": random.uniform(0.5, 0.95)
+        }
 
         # Store or update communication scores
         if active_sessions[session_id]['communication_scores'][question_idx] is None:
@@ -312,14 +227,13 @@ def process_frame():
             'error': str(e)
         }), 500
 
-# API endpoint to process audio
+# API endpoint to process audio - simplified version without actual processing
 @app.route('/api/interview/process-audio', methods=['POST'])
 def process_audio():
     try:
         data = request.json
         session_id = data.get('session_id')
         question_idx = data.get('question_idx', 0)
-        audio_data = data.get('audio_data', '')  # Base64 encoded audio
 
         if not session_id or session_id not in active_sessions:
             return jsonify({
@@ -330,11 +244,13 @@ def process_audio():
         # Update last activity timestamp
         active_sessions[session_id]['last_activity'] = datetime.now().isoformat()
 
-        # Save audio for analysis (in a real implementation)
-        save_audio(session_id, question_idx, audio_data)
-
-        # Analyze audio
-        audio_scores = analyze_audio(audio_data)
+        # Generate random scores for demonstration purposes
+        audio_scores = {
+            "speaking_pace": random.uniform(0.6, 0.95),
+            "voice_clarity": random.uniform(0.5, 0.9),
+            "filler_words": random.uniform(0.4, 0.85),
+            "tone": random.uniform(0.5, 0.9)
+        }
 
         # Store or update communication scores
         if active_sessions[session_id]['communication_scores'][question_idx] is None:
@@ -381,13 +297,12 @@ def get_feedback():
         active_sessions[session_id]['answers'][question_idx] = answer
 
         # Content feedback logic based on answer length and quality
-        # Improved scoring algorithm with more nuanced ranges
         answer_length = len(answer)
 
         # Base score calculation
         if answer_length < 20:  # Very short answer
             feedback_type = "constructive"
-            content_score = random.uniform(5.0, 6.5)  # Higher minimum score
+            content_score = random.uniform(5.0, 6.5)
         elif answer_length < 50:  # Short answer
             feedback_type = "constructive"
             content_score = random.uniform(6.0, 7.5)
@@ -415,7 +330,6 @@ def get_feedback():
             content_feedback += " Technical questions should demonstrate both knowledge and practical experience."
 
         # Communication feedback based on video and audio analysis
-        # In a real implementation, these would be calculated from actual analysis
         eye_contact_score = video_data.get('eye_contact', random.uniform(0.5, 1.0))
         facial_expressions_score = video_data.get('facial_expressions', random.uniform(0.4, 0.9))
         speaking_pace_score = audio_data.get('speaking_pace', random.uniform(0.6, 0.95))
@@ -468,11 +382,10 @@ def get_feedback():
         # Select 2 random communication feedback items to avoid overwhelming the user
         selected_comm_feedback = random.sample(comm_feedback, min(2, len(comm_feedback)))
 
-        # Calculate overall communication score with weighted components
-        # Give more weight to eye contact and facial expressions
+        # Calculate overall communication score
         communication_score = round((
-            eye_contact_score * 2.5 +  # Higher weight for eye contact
-            facial_expressions_score * 2.0 +  # Higher weight for facial expressions
+            eye_contact_score * 2.5 +
+            facial_expressions_score * 2.0 +
             speaking_pace_score * 1.8 +
             voice_clarity_score * 1.8 +
             filler_words_score * 1.9
@@ -683,12 +596,6 @@ def end_interview():
             'weak_area_feedback': weak_area_feedback
         }
 
-        # In a real implementation, you might want to store the session data in a database
-        # before removing it from memory
-
-        # For demonstration purposes, we'll keep the session data in memory
-        # active_sessions.pop(session_id, None)
-
         return jsonify(response_data)
     except Exception as e:
         print(f"Error ending interview: {e}")
@@ -697,32 +604,6 @@ def end_interview():
             'error': str(e)
         }), 500
 
-# Cleanup thread to remove old sessions
-def cleanup_old_sessions():
-    while True:
-        try:
-            current_time = datetime.now()
-            sessions_to_remove = []
-
-            for session_id, session_data in active_sessions.items():
-                last_activity = datetime.fromisoformat(session_data['last_activity'])
-                # Remove sessions inactive for more than 1 hour
-                if (current_time - last_activity).total_seconds() > 3600:
-                    sessions_to_remove.append(session_id)
-
-            for session_id in sessions_to_remove:
-                active_sessions.pop(session_id, None)
-                print(f"Removed inactive session: {session_id}")
-
-            # Check every 10 minutes
-            time.sleep(600)
-        except Exception as e:
-            print(f"Error in cleanup thread: {e}")
-            time.sleep(600)
-
-# Start cleanup thread
-cleanup_thread = threading.Thread(target=cleanup_old_sessions, daemon=True)
-cleanup_thread.start()
-
 if __name__ == '__main__':
+    print("Starting Mock Interview Flask server on http://localhost:5001")
     app.run(host='0.0.0.0', port=5001, debug=True, threaded=True)

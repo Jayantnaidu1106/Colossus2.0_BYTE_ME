@@ -1,6 +1,6 @@
 // app/api/result/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import clientPromise from "@/lib/mongodb";
 import { GoogleGenAI } from "@google/genai";
 
 export async function POST(req: NextRequest) {
