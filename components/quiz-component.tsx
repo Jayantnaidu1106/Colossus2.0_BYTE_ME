@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -59,12 +59,24 @@ export default function QuizComponent() {
         body: JSON.stringify({ topic: topicValue }),
       })
 
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`)
+      }
+
       const data = await response.json()
 
       if (data.error) {
         console.error("Backend error:", data.error)
+        alert(`Error generating quiz: ${data.error}`)
         setIsLoading(false)
         return
+      }
+
+      // Validate the data structure
+      if (!data.questions || !Array.isArray(data.questions) ||
+          !data.options || !data.options.choices || !Array.isArray(data.options.choices) ||
+          !data.answers || !Array.isArray(data.answers)) {
+        throw new Error('Invalid quiz data format received from server')
       }
 
       // Data is expected to be in the required structure:
@@ -73,6 +85,7 @@ export default function QuizComponent() {
       setView("quiz")
     } catch (error) {
       console.error("Error fetching quiz data:", error)
+      alert(`Failed to generate quiz. Please try again later. ${error instanceof Error ? error.message : ''}`)
     } finally {
       setIsLoading(false)
     }
@@ -84,22 +97,24 @@ export default function QuizComponent() {
 
     setIsSubmitting(true)
     try {
+      // Create a safe payload with proper validation
+      const payload = {
+        topic: topic || 'General Knowledge',
+        incorrectQuestions: Array.isArray(incorrectQuestions) ? incorrectQuestions : [],
+        totalQuestions: quizData.questions.length,
+        email: email || 'anonymous@example.com'
+      }
+
       const response = await fetch(resultApiEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          topic,
-          incorrectQuestions,
-         
-          email,
-         // Send the number of incorrect questions
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
-        throw new Error(`Network response not ok: ${response.statusText}`)
+        throw new Error(`Network response not ok: ${response.status} ${response.statusText}`)
       }
 
       const contentType = response.headers.get("content-type")
@@ -110,11 +125,15 @@ export default function QuizComponent() {
         console.error("Expected JSON response but got:", contentType)
         data = { suggestion: "Quiz completed successfully!" }
       }
+
+      // Set a default suggestion if none is provided
       setSuggestion(data.suggestion || "Quiz completed successfully!")
       setView("result")
     } catch (error) {
       console.error("Error submitting quiz results:", error)
-      setSuggestion("An error occurred while submitting your quiz results.")
+      setSuggestion("An error occurred while submitting your quiz results. Your quiz has been completed, but we couldn't generate personalized suggestions.")
+      // Still show results even if submission fails
+      setView("result")
     } finally {
       setIsSubmitting(false)
     }
@@ -137,22 +156,42 @@ export default function QuizComponent() {
   const handleNextQuestion = () => {
     if (!quizData) return
 
-    // If the selected option is not the correct answer, record the question text
-    if (selectedOption !== quizData.answers[currentQuestion]) {
-      setIncorrectQuestions((prev) => [
-        ...prev,
-        quizData.questions[currentQuestion],
-      ])
-    }
+    try {
+      // Validate data before proceeding
+      if (!Array.isArray(quizData.questions) ||
+          !Array.isArray(quizData.answers) ||
+          !quizData.options ||
+          !Array.isArray(quizData.options.choices)) {
+        throw new Error('Invalid quiz data structure');
+      }
 
-    setDirection(1)
-    setSelectedOption(null)
+      // Check if current question index is valid
+      if (currentQuestion < 0 || currentQuestion >= quizData.questions.length) {
+        throw new Error(`Invalid question index: ${currentQuestion}`);
+      }
 
-    if (currentQuestion < quizData.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
-    } else {
-      // Quiz completed, submit results
-      submitQuizResults()
+      // If the selected option is not the correct answer, record the question text
+      if (selectedOption !== quizData.answers[currentQuestion]) {
+        setIncorrectQuestions((prev) => [
+          ...prev,
+          quizData.questions[currentQuestion],
+        ])
+      }
+
+      setDirection(1)
+      setSelectedOption(null)
+
+      if (currentQuestion < quizData.questions.length - 1) {
+        setCurrentQuestion(currentQuestion + 1)
+      } else {
+        // Quiz completed, submit results
+        submitQuizResults()
+      }
+    } catch (error) {
+      console.error("Error handling next question:", error)
+      alert("An error occurred while navigating to the next question. Please try again.")
+      // Reset to topic view on error
+      setView("topic")
     }
   }
 

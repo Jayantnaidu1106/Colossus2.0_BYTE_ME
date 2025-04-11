@@ -15,6 +15,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
+
+// Dynamically import ParticlesWrapper to avoid SSR issues
+const ParticlesWrapper = dynamic(() => import("./ParticlesWrapper"), { ssr: false })
 
 const motivationalQuotes = [
   "The only way to learn mathematics is to do mathematics. — Paul Halmos",
@@ -114,28 +118,32 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-950 to-gray-900 flex items-center justify-center relative overflow-hidden">
+        {/* Particles Background for loading state */}
+        <ParticlesWrapper />
+        <div className="text-center bg-white/20 backdrop-blur-md p-8 rounded-xl shadow-xl z-10">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <p className="text-white">Loading your dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-950 to-gray-900 relative overflow-hidden">
+      {/* Particles Background */}
+      <ParticlesWrapper />
+      <header className="bg-white/90 backdrop-blur-sm shadow-md relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
               Atlas AI
             </span>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" className="flex items-center gap-2">
+              <Button variant="ghost" className="flex text-black hover:text-primary items-center gap-2">
                 <Video className="h-4 w-4" /> AI Mock Interview
               </Button>
-              <Button variant="ghost" className="flex items-center gap-2"
+              <Button variant="ghost" className="flex text-black hover:text-primary items-center gap-2"
                 onClick={() => { router.push("/studytools") }}>
                 <BookOpen className="h-4 w-4" /> Study Tools
               </Button>
@@ -147,16 +155,16 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Graph and Weak Topics */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-          <motion.div className="lg:col-span-3 bg-white rounded-xl shadow-md overflow-hidden"
+          <motion.div className="lg:col-span-3 bg-white/90 backdrop-blur-sm rounded-xl shadow-md overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
             <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Performance Tracker</h2>
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Performance Tracker</h2>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={dashboardData.performanceData}>
@@ -182,10 +190,10 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Card>
+            <Card className="bg-white/90 backdrop-blur-sm">
               <CardHeader className="pb-3">
-                <CardTitle>Areas to Improve</CardTitle>
-                <CardDescription>Focus on these topics to boost your performance</CardDescription>
+                <CardTitle className="text-gray-800">Areas to Improve</CardTitle>
+                <CardDescription className="text-gray-600">Focus on these topics to boost your performance</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
@@ -202,7 +210,7 @@ export default function Dashboard() {
         </div>
 
         {/* Motivational Quote */}
-        <motion.div className="bg-primary/10 rounded-xl p-6 mb-8 border border-primary/20"
+        <motion.div className="bg-white backdrop-blur-sm rounded-xl p-6 mb-8 border border-primary/20"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -222,10 +230,10 @@ export default function Dashboard() {
         {/* AI Tools */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
-            <Card className="h-full">
+            <Card className="h-full bg-white/90 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center"><Brain className="h-6 w-6 mr-2 text-primary" /> AI Personal Tutor</CardTitle>
-                <CardDescription>Get personalized help with any subject or topic</CardDescription>
+                <CardTitle className="flex items-center text-gray-800"><Brain className="h-6 w-6 mr-2 text-primary" /> AI Personal Tutor</CardTitle>
+                <CardDescription className="text-gray-600">Get personalized help with any subject or topic</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col h-full">
                 <p className="text-gray-600 mb-4">
@@ -244,10 +252,10 @@ export default function Dashboard() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }}>
-            <Card className="h-full">
+            <Card className="h-full bg-white/90 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center"><FileQuestion className="h-6 w-6 mr-2 text-primary" /> AI Quiz Generator</CardTitle>
-                <CardDescription>Test your knowledge with personalized quizzes</CardDescription>
+                <CardTitle className="flex items-center text-gray-800"><FileQuestion className="h-6 w-6 mr-2 text-primary" /> AI Quiz Generator</CardTitle>
+                <CardDescription className="text-gray-600">Test your knowledge with personalized quizzes</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col h-full">
                 <p className="text-gray-600 mb-4">

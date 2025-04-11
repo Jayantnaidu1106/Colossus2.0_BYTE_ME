@@ -43,7 +43,7 @@ export const authOptions: NextAuthOptions = {
             id: user._id?.toString() || '',
             name: user.name,
             email: user.email,
-            standard: user.standard,
+            standard: user.standard || undefined,
             weaktopics: user.weaktopics || []
           };
         } catch (error) {
@@ -79,7 +79,9 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/api/auth/signin',
+    signIn: '/login',
+    signOut: '/login',
+    error: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET || 'your-secret-key',
 };

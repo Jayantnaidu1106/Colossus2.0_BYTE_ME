@@ -5,7 +5,7 @@ import { motion, useInView, useAnimation } from "framer-motion"
 import {
   Brain,
   FileQuestion,
-  Youtube,
+  Video,
   LineChartIcon as ChartLineUp,
   Calculator,
   Mic,
@@ -20,6 +20,17 @@ import FeatureCard from "@/components/feature-card"
 import HeroSection from "@/components/hero-section"
 import Footer from "@/components/footer"
 import ThreeDModel from "@/components/three-d-model"
+import dynamic from "next/dynamic"
+import ErrorBoundary from "@/components/ErrorBoundary"
+
+// Dynamically import ParticlesWrapper with error handling
+const ParticlesWrapper = dynamic(() => import("@/components/ParticlesWrapper").catch(err => {
+  console.error('Error loading ParticlesWrapper:', err);
+  return () => null; // Return empty component on error
+}), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black"></div> // Fallback while loading
+})
 
 export default function Home() {
   const controls = useAnimation()
@@ -43,11 +54,7 @@ export default function Home() {
       title: "AI-Generated Quizzes",
       description: "Upskill yourself with personalized quizzes and get detailed analysis to improve your weak areas.",
     },
-    {
-      icon: <Quote className="h-8 w-8 text-primary" />,
-      title: "Daily Motivation",
-      description: "Receive inspiring quotes and motivation to keep you engaged and focused on your learning journey.",
-    },
+
     {
       icon: <ChartLineUp className="h-8 w-8 text-primary" />,
       title: "Adaptive Learning",
@@ -59,7 +66,7 @@ export default function Home() {
       description: "Get concise summaries of uploaded documents and ask questions related to the material.",
     },
     {
-      icon: <Youtube className="h-8 w-8 text-primary" />,
+      icon: <Video className="h-8 w-8 text-primary" />,
       title: "YouTube Video Summarizer",
       description: "Extract key points from educational videos without watching the entire content.",
     },
@@ -78,11 +85,7 @@ export default function Home() {
       title: "Multilingual Voice Support",
       description: "Ask questions through voice in multiple languages for a more natural learning experience.",
     },
-    {
-      icon: <Camera className="h-8 w-8 text-primary" />,
-      title: "Cheating Detection",
-      description: "Our advanced camera monitoring ensures quiz integrity and promotes honest learning.",
-    },
+
     {
       icon: <Cube className="h-8 w-8 text-primary" />,
       title: "3D Visualization",
@@ -106,15 +109,19 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <main className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Particles Background with Error Boundary */}
+      <ErrorBoundary>
+        <ParticlesWrapper />
+      </ErrorBoundary>
       <Navbar />
       <HeroSection />
 
       {/* Features Section */}
       <section className="py-20 px-4 md:px-8 max-w-7xl mx-auto" id="features">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">Revolutionize Your Learning Experience</h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Revolutionize Your Learning Experience</h2>
+          <p className="text-lg text-white max-w-3xl mx-auto">
             Our platform combines cutting-edge AI technology with proven educational methods to provide a personalized
             learning journey.
           </p>
@@ -140,7 +147,7 @@ export default function Home() {
       </section>
 
       {/* Quote Section */}
-      <section className="py-16 bg-primary text-white">
+      <section className="py-16 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 backdrop-blur-sm text-white border-t border-b border-indigo-500/20">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -159,28 +166,28 @@ export default function Home() {
       </section>
 
       {/* 3D Visualization Demo */}
-      <section className="py-20 px-4 bg-gray-50">
+      <section className="py-20 px-4 bg-transparent text-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">Interactive 3D Learning</h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Interactive 3D Learning</h2>
+            <p className="text-lg text-white max-w-3xl mx-auto">
               Visualize complex concepts with our interactive 3D models for better understanding and retention.
             </p>
           </div>
 
-          <div className="h-[500px] bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="h-[500px] bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-indigo-500/20">
             <ThreeDModel />
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-transparent text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
             Ready to Transform Your Learning Journey?
           </h2>
-          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-white mb-8 max-w-2xl mx-auto">
             Join thousands of students who are already experiencing the future of education with our AI-powered learning
             platform.
           </p>
@@ -191,10 +198,10 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <a
-              href="#signup"
-              className="inline-flex items-center bg-primary text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-primary/90 transition-colors"
+              href="/api/auth/signup"
+              className="inline-flex items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-full text-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-indigo-500/20"
             >
-              Get Started Today
+              Get Started Free
               <ArrowRight className="ml-2 h-5 w-5" />
             </a>
           </motion.div>

@@ -3,12 +3,36 @@ import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { GoogleGenAI } from "@google/genai";
 
+// Function to generate a default suggestion when API is unavailable
+function generateDefaultSuggestion(topic: string, incorrectQuestions: string[]) {
+  return {
+    suggestion: `Based on your quiz results on ${topic}, we recommend focusing on the core concepts and principles. Review the questions you missed and try to understand the underlying concepts. Consider using additional learning resources to strengthen your knowledge in this area.`,
+    topics: [topic]
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { topic, incorrectQuestions, totalQuestions, email } = await req.json();
+    // Parse request body with error handling
+    let topic = '';
+    let incorrectQuestions: string[] = [];
+    let totalQuestions = 0;
+    let email = '';
 
+    try {
+      const body = await req.json();
+      topic = body.topic || 'General Knowledge';
+      incorrectQuestions = Array.isArray(body.incorrectQuestions) ? body.incorrectQuestions : [];
+      totalQuestions = body.totalQuestions || 5;
+      email = body.email || '';
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      return NextResponse.json({ error: 'Invalid request format' }, { status: 400 });
+    }
+
+    // Email validation is optional for this endpoint
     if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+      console.warn('No email provided, proceeding with anonymous user');
     }
 
     // Construct the prompt for Gemini
@@ -26,14 +50,41 @@ Respond strictly in JSON format as:
 }
     `;
 
-    // Initialize the GoogleGenAI client with your Gemini API key
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    // Check if API key is available
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('GEMINI_API_KEY is not set in environment variables');
+      // Return default suggestion when API key is missing
+      const defaultSuggestion = generateDefaultSuggestion(topic, incorrectQuestions);
+      return NextResponse.json({ suggestion: JSON.stringify(defaultSuggestion, null, 2) });
+    }
 
-    const geminiResponse = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-    console.log("Gemini Response:", geminiResponse);
+    // If no incorrect questions, return a simple success message
+    if (!incorrectQuestions.length) {
+      const perfectScoreSuggestion = {
+        suggestion: `Congratulations! You got a perfect score on the ${topic} quiz. Keep up the great work!`,
+        topics: [topic]
+      };
+      return NextResponse.json({ suggestion: JSON.stringify(perfectScoreSuggestion, null, 2) });
+    }
+
+    // Initialize the GoogleGenAI client with your Gemini API key
+    const ai = new GoogleGenAI({ apiKey });
+
+    // Call Gemini API with error handling
+    let geminiResponse;
+    try {
+      geminiResponse = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      });
+      console.log("Gemini Response:", geminiResponse);
+    } catch (apiError) {
+      console.error('Error calling Gemini API:', apiError);
+      // Return default suggestion when API call fails
+      const defaultSuggestion = generateDefaultSuggestion(topic, incorrectQuestions);
+      return NextResponse.json({ suggestion: JSON.stringify(defaultSuggestion, null, 2) });
+    }
 
     if (!geminiResponse || !geminiResponse.text) {
       return NextResponse.json(

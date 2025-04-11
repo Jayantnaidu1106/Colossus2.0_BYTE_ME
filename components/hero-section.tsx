@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button"
 
 export default function HeroSection() {
   return (
-    <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-4 bg-gradient-to-br from-white via-gray-50 to-purple-50">
+    <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-4 bg-transparent text-white">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white mb-6">
               Your Personal AI Mentor, Available <span className="text-primary">24/7</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-lg">
+            <p className="text-xl text-gray-300 mb-8 max-w-lg">
               Transform your learning experience with personalized AI mentors that adapt to your unique needs and help
               you achieve your educational goals.
             </p>
@@ -23,7 +23,7 @@ export default function HeroSection() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
-            <div className="mt-8 flex items-center text-gray-500">
+            <div className="mt-8 flex items-center text-gray-300">
               {/* <div className="flex -space-x-2 mr-4">
                 {[1, 2, 3, 4].map((i) => (
                   <div
@@ -50,7 +50,7 @@ export default function HeroSection() {
             transition={{ duration: 0.5 }}
             className="relative"
           >
-            <div className="relative z-10 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div className="relative z-10 bg-white text-black rounded-2xl shadow-xl overflow-hidden border border-gray-100">
               <div className="p-1 bg-gradient-to-r from-primary to-purple-500">
                 <div className="bg-white p-6 rounded-t-xl">
                   <div className="flex items-center mb-4">
@@ -101,9 +101,9 @@ export default function HeroSection() {
       </div>
 
       {/* Wave divider */}
-      <div className="absolute left-0 right-0 bottom-0 h-16 bg-white">
+      <div className="absolute left-0 right-0 bottom-0 h-16 bg-transparent">
         <svg
-          className="absolute bottom-0 w-full h-16 text-white"
+          className="absolute bottom-0 w-full h-16 text-[#0f172a]"
           preserveAspectRatio="none"
           viewBox="0 0 1440 74"
           fill="currentColor"

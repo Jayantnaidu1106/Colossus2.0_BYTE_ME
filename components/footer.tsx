@@ -4,7 +4,7 @@ import Link from "next/link"
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-gradient-to-br from-gray-950 to-[#0f172a] text-white border-t border-indigo-500/20">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-1">
@@ -14,11 +14,11 @@ export default function Footer() {
             </p>
           </div>
 
-          
-         
+
+
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-indigo-500/10 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm"> {new Date().getFullYear()} Atlas AI.</p>
           <div className="mt-4 md:mt-0">
             <a

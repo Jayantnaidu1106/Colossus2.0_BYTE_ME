@@ -33,7 +33,7 @@ export default function Navbar() {
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 100, damping: 20 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/90 backdrop-blur-md shadow-md" : "bg-transparent"
+        isScrolled ? "bg-gradient-to-r from-gray-900/90 via-indigo-950/80 to-purple-900/70 backdrop-blur-md shadow-lg border-b border-indigo-500/30" : "bg-transparent"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,7 +42,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+                <span className="text-2xl md:text-3xl font-bold bg-clip-text  text-blue whitespace-nowrap drop-shadow-sm">
                   Atlas AI
                 </span>
               </motion.div>
@@ -50,17 +50,17 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <NavLink href="#features">Features</NavLink>
-       
+          <nav className="hidden md:flex   items-center space-x-8">
+            <NavLink   href="#features">Features</NavLink>
+
             <div className="flex items-center space-x-4">
               <Link href="/api/auth/signin">
-                <Button variant="outline" className="rounded-full px-6">
+                <Button variant="outline" className="rounded-full px-6 border-indigo-500/30 hover:bg-indigo-500/20 hover:text-white">
                   Sign In
                 </Button>
               </Link>
               <Link href="/api/auth/signup">
-                <Button className="rounded-full px-6">Sign Up</Button>
+                <Button className="rounded-full px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-indigo-500/20">Sign Up</Button>
               </Link>
             </div>
           </nav>
@@ -70,6 +70,7 @@ export default function Navbar() {
             <Button
               variant="ghost"
               size="icon"
+              className="text-white hover:bg-indigo-500/20"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -85,21 +86,21 @@ export default function Navbar() {
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          className="md:hidden bg-white"
+          className="md:hidden bg-gradient-to-br from-gray-900/95 via-indigo-950/90 to-purple-900/85 backdrop-blur-md border border-indigo-500/30 rounded-lg shadow-lg"
         >
-          <div className="px-4 pt-2 pb-6 space-y-4">
+          <div className="px-4  pt-2 pb-6 space-y-4">
             <MobileNavLink href="#features" onClick={() => setIsMobileMenuOpen(false)}>
-              Features
+             <div className="text-white">Features </div>
             </MobileNavLink>
-            
+
             <div className="pt-4 flex flex-col space-y-3">
               <Link href="/api/auth/signin" className="w-full">
-                <Button variant="outline" className="w-full rounded-full">
+                <Button variant="outline" className="w-full rounded-full border-indigo-500/30 hover:bg-indigo-500/20 hover:text-white">
                   Sign In
                 </Button>
               </Link>
               <Link href="/api/auth/signup" className="w-full">
-                <Button className="w-full rounded-full">
+                <Button className="w-full rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-indigo-500/20">
                   Sign Up
                 </Button>
               </Link>
@@ -113,7 +114,7 @@ export default function Navbar() {
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="text-gray-700 hover:text-primary transition-colors font-medium">
+    <Link href={href} className="text-white hover:text-indigo-300 transition-colors font-medium">
       <motion.span whileHover={{ y: -2 }} whileTap={{ y: 0 }} className="inline-block">
         {children}
       </motion.span>
@@ -134,7 +135,7 @@ function MobileNavLink({
     <Link
       href={href}
       onClick={onClick}
-      className="block py-3 text-gray-700 hover:text-primary transition-colors font-medium border-b border-gray-100"
+      className="block py-3 text-white hover:text-indigo-300 transition-colors font-medium border-b border-indigo-500/20"
     >
       {children}
     </Link>
