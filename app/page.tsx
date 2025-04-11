@@ -75,11 +75,7 @@ export default function Home() {
       title: "Progress Tracking",
       description: "Monitor your daily progress to stay motivated and achieve more in your learning journey.",
     },
-    {
-      icon: <Calculator className="h-8 w-8 text-primary" />,
-      title: "Scientific Calculator",
-      description: "Access a built-in scientific calculator for solving complex mathematical problems.",
-    },
+    
     {
       icon: <Mic className="h-8 w-8 text-primary" />,
       title: "Multilingual Voice Support",
@@ -91,11 +87,7 @@ export default function Home() {
       title: "3D Visualization",
       description: "Experience interactive 3D models to better understand complex concepts and structures.",
     },
-    {
-      icon: <Accessibility className="h-8 w-8 text-primary" />,
-      title: "Accessibility Features",
-      description: "Special tools like speech-to-text for learners with disabilities to ensure education for all.",
-    },
+    
   ]
 
   const containerVariants = {

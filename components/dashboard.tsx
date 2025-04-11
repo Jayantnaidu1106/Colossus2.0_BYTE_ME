@@ -113,7 +113,7 @@ export default function Dashboard() {
   }, [])
 
   const handleLogout = async () => {
-    await signOut({ redirect: true, callbackUrl: "/login" })
+    await signOut({ redirect: true, callbackUrl: "/" })
   }
 
   if (loading) {
