@@ -306,6 +306,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'react-hot-toast';
+import { Globe } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // ----------- Global Interface Declarations ----------- //
 declare global {
@@ -315,9 +318,25 @@ declare global {
   }
 }
 
+interface MessageMetadata {
+  translated?: boolean;
+  originalLanguage?: string;
+  translatedText?: string;
+  model?: string;
+  language?: string;
+  languageName?: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  metadata?: MessageMetadata;
+}
+
+interface Language {
+  code: string;
+  name: string;
+  voice: string;
 }
 
 // ----------- Main Component ----------- //
@@ -331,6 +350,22 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [recognition, setRecognition] = useState<any>(null);
 
+  // Multilingual support state
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>({
+    code: 'en',
+    name: 'English',
+    voice: 'en-US-Neural2-F'
+  });
+  const [supportedLanguages, setSupportedLanguages] = useState<Language[]>([
+    { code: 'en', name: 'English', voice: 'en-US-Neural2-F' },
+    { code: 'hi', name: 'Hindi', voice: 'hi-IN-Neural2-A' },
+    { code: 'ta', name: 'Tamil', voice: 'ta-IN-Neural2-A' },
+    { code: 'te', name: 'Telugu', voice: 'te-IN-Neural2-A' },
+    { code: 'kn', name: 'Kannada', voice: 'kn-IN-Neural2-A' },
+    { code: 'ml', name: 'Malayalam', voice: 'ml-IN-Neural2-A' },
+  ]);
+  const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ----------- useEffect: Initialize Speech Recognition ----------- //
@@ -340,20 +375,51 @@ export default function Home() {
       if (SpeechRecognition) {
         const recog = new SpeechRecognition();
         recog.continuous = false;
-        recog.lang = 'en-US';
+
+        // Set language based on selected language
+        const langCode = selectedLanguage.code;
+        // Map language code to BCP 47 language tag
+        const langMap: Record<string, string> = {
+          'en': 'en-US',
+          'hi': 'hi-IN',
+          'ta': 'ta-IN',
+          'te': 'te-IN',
+          'kn': 'kn-IN',
+          'ml': 'ml-IN'
+        };
+        recog.lang = langMap[langCode] || 'en-US';
+
         recog.interimResults = false;
 
         recog.onresult = (event: any) => {
           const transcript = event.results[0][0].transcript;
           setInput(transcript);
+
+          // Show toast notification for detected speech
+          toast.success(`Detected speech in ${selectedLanguage.name}`, {
+            duration: 3000,
+            icon: '🎤'
+          });
+
           handleSubmit(transcript); // Auto submit on speech result
         };
 
         recog.onend = () => setIsListening(false);
+
+        recog.onerror = (event: any) => {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+          setError(`Speech recognition error: ${event.error}`);
+
+          toast.error(`Speech recognition error: ${event.error}`, {
+            duration: 5000
+          });
+        };
+
         setRecognition(recog);
       }
     }
-  }, []);
+  }, [selectedLanguage]); // Re-initialize when language changes
 
   // ----------- useEffect: Auto Scroll to Bottom ----------- //
   useEffect(() => {
@@ -380,7 +446,27 @@ export default function Home() {
       setIsSpeaking(true);
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
+
+      // Map language code to BCP 47 language tag
+      const langMap: Record<string, string> = {
+        'en': 'en-US',
+        'hi': 'hi-IN',
+        'ta': 'ta-IN',
+        'te': 'te-IN',
+        'kn': 'kn-IN',
+        'ml': 'ml-IN'
+      };
+      utterance.lang = langMap[selectedLanguage.code] || 'en-US';
+
+      // Try to find a voice that matches the selected language
+      const voices = window.speechSynthesis.getVoices();
+      const languageVoices = voices.filter(voice =>
+        voice.lang.startsWith(selectedLanguage.code)
+      );
+
+      if (languageVoices.length > 0) {
+        utterance.voice = languageVoices[0];
+      }
 
       utterance.onend = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
@@ -407,7 +493,9 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: messageText,
-          email: 'test@example.com' // In production, use the actual user email
+          email: 'test@example.com', // In production, use the actual user email
+          sourceLanguage: selectedLanguage.code,
+          targetLanguage: selectedLanguage.code // Use the same language for input and output
         }),
       });
 
@@ -435,8 +523,24 @@ export default function Home() {
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: assistantResponseText
+        content: assistantResponseText,
+        metadata: {
+          model: data.model || 'gemini-2.0-flash',
+          translated: data.isTranslated || false,
+          language: data.targetLanguage || selectedLanguage.code,
+          languageName: data.languageName || selectedLanguage.name
+        }
       };
+
+      // Update detected language if available
+      if (data.detectedLanguage) {
+        setDetectedLanguage(data.detectedLanguage);
+      }
+
+      // Update supported languages if available
+      if (data.supportedLanguages && data.supportedLanguages.length > 0) {
+        setSupportedLanguages(data.supportedLanguages);
+      }
 
       // Add assistant message to the chat (user message was already added)
       setMessages(prev => {
@@ -473,8 +577,18 @@ export default function Home() {
     <main className="flex flex-col h-screen bg-gray-100">
       {/* Header */}
       <header className="bg-blue-600 text-white p-4">
-        <h1 className="text-2xl font-bold">AI Voice Assistant <span className="text-sm font-normal bg-blue-700 px-2 py-1 rounded ml-2">Powered by Gemini</span></h1>
-        <p className="text-sm">Ask questions and get spoken responses from Google's Gemini AI</p>
+        <h1 className="text-2xl font-bold">Multilingual Voice Assistant <span className="text-sm font-normal bg-blue-700 px-2 py-1 rounded ml-2">Powered by Gemini</span></h1>
+        <p className="text-sm">Ask questions in multiple languages and get spoken responses from Google's Gemini AI</p>
+        <div className="mt-1 flex flex-wrap gap-1">
+          {supportedLanguages.map(lang => (
+            <span
+              key={lang.code}
+              className={`text-xs px-2 py-0.5 rounded ${selectedLanguage.code === lang.code ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}`}
+            >
+              {lang.name}
+            </span>
+          ))}
+        </div>
       </header>
 
       {/* Error Display */}
@@ -490,9 +604,17 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-gray-500 mt-10">
-            <p>Hello! I'm your educational voice assistant powered by Google Gemini.</p>
-            <p className="text-sm mt-2">Ask me questions about your studies, homework, or any educational topic.</p>
-            <p className="text-sm mt-2">Click the microphone button to speak, or type your question below.</p>
+            <p>Hello! I'm your multilingual educational voice assistant powered by Google Gemini.</p>
+            <p className="text-sm mt-2">Ask me questions about your studies, homework, or any educational topic in your preferred language.</p>
+            <p className="text-sm mt-2">Select your language using the globe icon, then click the microphone button to speak, or type your question below.</p>
+            <div className="mt-4 flex justify-center gap-2">
+              <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded flex items-center">
+                <Globe className="h-4 w-4 mr-1" /> Select language
+              </span>
+              <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded flex items-center">
+                🎤 Speak in your language
+              </span>
+            </div>
           </div>
         )}
         {messages.map((msg, index) => (
@@ -504,7 +626,20 @@ export default function Home() {
                 : 'bg-white mr-auto shadow'
             }`}
           >
-            {msg.content}
+            <div>{msg.content}</div>
+
+            {/* Show translation metadata if available */}
+            {msg.metadata?.translated && (
+              <div className="mt-1 text-xs text-gray-500">
+                {msg.role === 'assistant' && msg.metadata.languageName && (
+                  <div className="flex items-center gap-1">
+                    <span>Powered by {msg.metadata.model}</span>
+                    <span>•</span>
+                    <span>Translated to {msg.metadata.languageName}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
         <div ref={messagesEndRef} />
@@ -513,6 +648,42 @@ export default function Home() {
       {/* Input Area */}
       <div className="p-4 bg-white border-t">
         <div className="flex items-center gap-2">
+          {/* Language Selector */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700"
+                title="Select language"
+              >
+                <Globe className="h-5 w-5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56">
+              <div className="space-y-2">
+                <h3 className="font-medium">Select Your Language</h3>
+                <p className="text-xs text-gray-500 mb-2">The assistant will respond in your selected language</p>
+                <div className="grid gap-1">
+                  {supportedLanguages.map((language) => (
+                    <button
+                      key={language.code}
+                      className={`text-left px-2 py-1 rounded ${selectedLanguage.code === language.code ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                      onClick={() => {
+                        setSelectedLanguage(language);
+                        toast.success(`Language changed to ${language.name}`);
+                      }}
+                    >
+                      {language.name}
+                      {detectedLanguage === language.code && (
+                        <span className="ml-auto text-xs bg-green-100 text-green-800 px-1 rounded">
+                          Detected
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <button
             onClick={handleStartListening}
             disabled={isListening}
@@ -526,14 +697,21 @@ export default function Home() {
             🎤
           </button>
 
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type your message or click the microphone..."
-            className="flex-1 p-3 border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows={1}
-          />
+          <div className="flex-1 relative">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder={`Type your message in ${selectedLanguage.name} or click the microphone...`}
+              className="w-full p-3 border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={1}
+            />
+
+            {/* Language indicator */}
+            <div className="absolute bottom-1 right-2 text-xs text-gray-500 bg-white px-1 rounded">
+              {selectedLanguage.name}
+            </div>
+          </div>
 
           <button
             onClick={() => handleSubmit()}

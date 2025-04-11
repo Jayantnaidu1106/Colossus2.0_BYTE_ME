@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, MessageSquare, Mic, Sun, Moon, UserRound } from "lucide-react"
+import { FileText, MessageSquare, Mic, Sun, Moon, UserRound, Globe } from "lucide-react"
 import dynamic from "next/dynamic"
 
 // Dynamically import ParticlesWrapper to avoid SSR issues
@@ -38,7 +38,7 @@ export default function Home() {
     >
       {/* Particles Background - Only show in dark mode */}
       {isDarkMode && <ParticlesWrapper />}
-      
+
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-8">
           <header className="flex justify-between items-center mb-12">
@@ -127,6 +127,8 @@ export default function Home() {
             </Card>
 
             {/* Voice Assistant Card */}
+       
+
             <Card
               onClick={() => router.push("/studytools/Voicechat")}
               className={`overflow-hidden ${
@@ -135,31 +137,27 @@ export default function Home() {
                   : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
               } hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 pointer-events-none" />
               <CardHeader className="relative z-10">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
-                  <Mic className="h-6 w-6 text-emerald-600" />
+                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
+                  <Globe className="h-6 w-6 text-indigo-600" />
                 </div>
-                <CardTitle className="text-xl">Voice Assistant</CardTitle>
+                <CardTitle className="text-xl">Multilingual Assistant</CardTitle>
                 <CardDescription className={isDarkMode ? "text-gray-300" : "text-gray-500"}>
-                  Interact with your content using voice commands
+                  Voice assistant with multiple language support
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative z-10">
                 <p className={isDarkMode ? "text-gray-300" : "text-gray-600"}>
-                  Speak to your assistant and get audio responses. Perfect for hands-free summarization
-                  and information retrieval.
+                  Interact with your AI assistant in multiple languages. Automatic language detection and translation powered by Sarvam AI.
                 </p>
               </CardContent>
               <CardFooter className="relative z-10">
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                onClick={handleClick}
-                >
-                  Start Voice Assistant
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                  Try Multilingual Assistant
                 </Button>
               </CardFooter>
             </Card>
-
             {/* AI Mock Interview Card */}
             <Card
               onClick={() => router.push("/studytools/mockinterview")}
@@ -190,6 +188,8 @@ export default function Home() {
                 </Button>
               </CardFooter>
             </Card>
+
+            {/* Multilingual Voice Assistant Card */}
           </div>
         </div>
       </div>
