@@ -49,14 +49,14 @@ const ParticlesWrapper: React.FC = () => {
       >
         <Particles
           particleColors={['#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#0ea5e9']}
-          particleCount={300}
-          particleSpread={10}
-          speed={0.1}
-          particleBaseSize={200}
+          particleCount={2000}
+          particleSpread={15}
+          speed={0.20}
+          particleBaseSize={150}
           moveParticlesOnHover={true}
           alphaParticles={true}
           disableRotation={false}
-          sizeRandomness={1}
+          sizeRandomness={1.2}
         />
       </div>
     );

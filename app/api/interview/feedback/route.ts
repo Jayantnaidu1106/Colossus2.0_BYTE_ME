@@ -26,12 +26,12 @@ const evaluateInterviewFeedback = (question: string, answer: string) => {
     const wordCount = answer.split(/\s+/).length;
     const sentenceCount = answer.split(/[.!?]+/).filter(Boolean).length;
 
-    // Evaluate completeness based on length
-    detailedScores.completeness = Math.min(0.9, wordCount / 100);
+    // Evaluate completeness based on length - more generous scoring with 2 decimal places
+    detailedScores.completeness = Math.min(0.95, parseFloat((0.7 + (wordCount / 150)).toFixed(2)));
 
-    // Evaluate clarity based on average sentence length
+    // Evaluate clarity based on average sentence length - more generous scoring with 2 decimal places
     const avgSentenceLength = wordCount / (sentenceCount || 1);
-    detailedScores.clarity = avgSentenceLength > 5 && avgSentenceLength < 25 ? 0.8 : 0.5;
+    detailedScores.clarity = parseFloat((avgSentenceLength > 5 && avgSentenceLength < 25 ? 0.9 : 0.7).toFixed(2));
 
     // Check for relevance by looking for keywords from the question in the answer
     const questionKeywords = question.toLowerCase().split(/\s+/).filter(word => word.length > 3);
@@ -42,21 +42,23 @@ const evaluateInterviewFeedback = (question: string, answer: string) => {
       if (answerLower.includes(keyword)) keywordMatches++;
     });
 
+    // More generous relevance scoring with 2 decimal places
     detailedScores.relevance = questionKeywords.length > 0 ?
-      Math.min(0.9, keywordMatches / questionKeywords.length) : 0.5;
+      parseFloat((Math.min(0.95, 0.7 + (keywordMatches / questionKeywords.length) * 0.3)).toFixed(2)) : 0.75;
 
     // Calculate overall content score
     contentScore = (detailedScores.relevance + detailedScores.completeness + detailedScores.clarity) / 3;
   }
 
-  // Communication evaluation (without video/audio, we use defaults with slight randomization)
-  detailedScores.eye_contact = 0.7 + Math.random() * 0.2;
-  detailedScores.facial_expressions = 0.7 + Math.random() * 0.2;
-  detailedScores.speaking_pace = 0.7 + Math.random() * 0.2;
-  detailedScores.voice_clarity = 0.7 + Math.random() * 0.2;
-  detailedScores.filler_words = 0.7 + Math.random() * 0.2;
-  detailedScores.posture = 0.7 + Math.random() * 0.2;
-  detailedScores.engagement = 0.7 + Math.random() * 0.2;
+  // Communication evaluation (without video/audio, we use higher defaults with slight randomization)
+  // All scores limited to 2 decimal places
+  detailedScores.eye_contact = parseFloat((0.8 + Math.random() * 0.15).toFixed(2));
+  detailedScores.facial_expressions = parseFloat((0.8 + Math.random() * 0.15).toFixed(2));
+  detailedScores.speaking_pace = parseFloat((0.8 + Math.random() * 0.15).toFixed(2));
+  detailedScores.voice_clarity = parseFloat((0.8 + Math.random() * 0.15).toFixed(2));
+  detailedScores.filler_words = parseFloat((0.8 + Math.random() * 0.15).toFixed(2));
+  detailedScores.posture = parseFloat((0.8 + Math.random() * 0.15).toFixed(2));
+  detailedScores.engagement = parseFloat((0.8 + Math.random() * 0.15).toFixed(2));
 
   // Calculate communication score
   communicationScore = (
@@ -69,8 +71,10 @@ const evaluateInterviewFeedback = (question: string, answer: string) => {
     detailedScores.engagement
   ) / 7;
 
-  // Calculate overall score
-  const overallScore = (contentScore * 0.6) + (communicationScore * 0.4);
+  // Calculate overall score with 2 decimal places
+  contentScore = parseFloat(contentScore.toFixed(2));
+  communicationScore = parseFloat(communicationScore.toFixed(2));
+  const overallScore = parseFloat(((contentScore * 0.6) + (communicationScore * 0.4)).toFixed(2));
 
   // Generate feedback based on scores
   let contentFeedback = '';

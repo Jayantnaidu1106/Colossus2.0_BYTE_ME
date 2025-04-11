@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import clientPromise from '@/lib/mongodb';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Evaluate interview data when Flask server is unavailable
 const evaluateInterviewEnd = (sessionId: string, sessionData?: any) => {
-  // Default scores if no session data is provided
-  let contentScore = 0.7;
-  let communicationScore = 0.7;
+  // Default scores if no session data is provided - more generous with 2 decimal places
+  let contentScore = 0.85;
+  let communicationScore = 0.85;
   let detailedScores = {
-    relevance: 0.7,
-    completeness: 0.7,
-    clarity: 0.7,
-    eye_contact: 0.7,
-    facial_expressions: 0.7,
-    speaking_pace: 0.7,
-    voice_clarity: 0.7,
-    filler_words: 0.7,
-    posture: 0.7,
-    engagement: 0.7
+    relevance: 0.85,
+    completeness: 0.85,
+    clarity: 0.85,
+    eye_contact: 0.85,
+    facial_expressions: 0.85,
+    speaking_pace: 0.85,
+    voice_clarity: 0.85,
+    filler_words: 0.85,
+    posture: 0.85,
+    engagement: 0.85
   };
 
   // If we have session data, calculate actual scores
@@ -48,11 +51,11 @@ const evaluateInterviewEnd = (sessionId: string, sessionData?: any) => {
         const wordCount = question.answer.split(/\s+/).length;
         const sentenceCount = question.answer.split(/[.!?]+/).filter(Boolean).length;
 
-        // Calculate scores for this question
+        // Calculate scores for this question - more generous with 2 decimal places
         const questionScores = {
-          relevance: Math.min(0.9, 0.5 + (wordCount / 200)),
-          completeness: Math.min(0.9, wordCount / 100),
-          clarity: (sentenceCount > 0 && wordCount / sentenceCount < 25) ? 0.8 : 0.6
+          relevance: parseFloat((Math.min(0.95, 0.7 + (wordCount / 150))).toFixed(2)),
+          completeness: parseFloat((Math.min(0.95, 0.7 + (wordCount / 100))).toFixed(2)),
+          clarity: parseFloat(((sentenceCount > 0 && wordCount / sentenceCount < 25) ? 0.9 : 0.75).toFixed(2))
         };
 
         // Add to total scores
@@ -60,29 +63,29 @@ const evaluateInterviewEnd = (sessionId: string, sessionData?: any) => {
         totalDetailedScores.completeness += questionScores.completeness;
         totalDetailedScores.clarity += questionScores.clarity;
 
-        // Communication scores (simulated)
-        totalDetailedScores.eye_contact += 0.6 + Math.random() * 0.3;
-        totalDetailedScores.facial_expressions += 0.6 + Math.random() * 0.3;
-        totalDetailedScores.speaking_pace += 0.6 + Math.random() * 0.3;
-        totalDetailedScores.voice_clarity += 0.6 + Math.random() * 0.3;
-        totalDetailedScores.filler_words += 0.6 + Math.random() * 0.3;
-        totalDetailedScores.posture += 0.6 + Math.random() * 0.3;
-        totalDetailedScores.engagement += 0.6 + Math.random() * 0.3;
+        // Communication scores (simulated) - more generous with 2 decimal places
+        totalDetailedScores.eye_contact += parseFloat((0.75 + Math.random() * 0.2).toFixed(2));
+        totalDetailedScores.facial_expressions += parseFloat((0.75 + Math.random() * 0.2).toFixed(2));
+        totalDetailedScores.speaking_pace += parseFloat((0.75 + Math.random() * 0.2).toFixed(2));
+        totalDetailedScores.voice_clarity += parseFloat((0.75 + Math.random() * 0.2).toFixed(2));
+        totalDetailedScores.filler_words += parseFloat((0.75 + Math.random() * 0.2).toFixed(2));
+        totalDetailedScores.posture += parseFloat((0.75 + Math.random() * 0.2).toFixed(2));
+        totalDetailedScores.engagement += parseFloat((0.75 + Math.random() * 0.2).toFixed(2));
       }
     });
 
     // Calculate averages if we have questions
     if (questionCount > 0) {
-      // Average detailed scores
+      // Average detailed scores with 2 decimal places
       Object.keys(totalDetailedScores).forEach(key => {
-        detailedScores[key] = totalDetailedScores[key] / questionCount;
+        detailedScores[key] = parseFloat((totalDetailedScores[key] / questionCount).toFixed(2));
       });
 
-      // Calculate content score from detailed scores
-      contentScore = (detailedScores.relevance + detailedScores.completeness + detailedScores.clarity) / 3;
+      // Calculate content score from detailed scores with 2 decimal places
+      contentScore = parseFloat(((detailedScores.relevance + detailedScores.completeness + detailedScores.clarity) / 3).toFixed(2));
 
-      // Calculate communication score
-      communicationScore = (
+      // Calculate communication score with 2 decimal places
+      communicationScore = parseFloat((
         detailedScores.eye_contact +
         detailedScores.facial_expressions +
         detailedScores.speaking_pace +
@@ -90,12 +93,12 @@ const evaluateInterviewEnd = (sessionId: string, sessionData?: any) => {
         detailedScores.filler_words +
         detailedScores.posture +
         detailedScores.engagement
-      ) / 7;
+      ) / 7).toFixed(2);
     }
   }
 
-  // Calculate overall score
-  const overallScore = (contentScore * 0.6) + (communicationScore * 0.4);
+  // Calculate overall score with 2 decimal places
+  const overallScore = parseFloat(((contentScore * 0.6) + (communicationScore * 0.4)).toFixed(2));
 
   // Generate strengths and areas for improvement based on scores
   const strengths = [];
@@ -252,18 +255,191 @@ export async function POST(req: NextRequest) {
         }
       };
 
+      // Save the interview results to MongoDB
+      try {
+        const session = await getServerSession(authOptions);
+        const email = session?.user?.email;
+
+        if (email) {
+          const client = await clientPromise;
+          const db = client.db();
+
+          // Save the interview result
+          await db.collection('interviews').insertOne({
+            email,
+            timestamp: new Date(),
+            interview_id: transformedData.interview_id,
+            content_score: transformedData.overall_feedback.content_score,
+            communication_score: transformedData.overall_feedback.communication_score,
+            overall_score: transformedData.overall_feedback.overall_score,
+            detailed_scores: transformedData.overall_feedback.detailed_scores,
+            strengths: transformedData.overall_feedback.strengths,
+            areas_for_improvement: transformedData.overall_feedback.areas_for_improvement
+          });
+
+          console.log(`Saved interview result for ${email} with ID ${transformedData.interview_id}`);
+
+          // Update user's weak topics based on areas for improvement
+          const weakTopics = transformedData.overall_feedback.areas_for_improvement
+            .map((area: string) => {
+              // Extract the main topic from the improvement area
+              const topicMatch = area.match(/^(\w+)/);
+              return topicMatch ? topicMatch[0] : null;
+            })
+            .filter(Boolean); // Remove null values
+
+          if (weakTopics.length > 0) {
+            // Get the user's current weak topics
+            const user = await db.collection('users').findOne({ email });
+            const currentWeakTopics = user?.weaktopics || [];
+
+            // Combine current and new weak topics, remove duplicates
+            const updatedWeakTopics = [...new Set([...currentWeakTopics, ...weakTopics])];
+
+            // Update the user's weak topics
+            await db.collection('users').updateOne(
+              { email },
+              { $set: { weaktopics: updatedWeakTopics } },
+              { upsert: true }
+            );
+
+            console.log(`Updated weak topics for ${email}:`, updatedWeakTopics);
+          }
+        } else {
+          console.warn('No user email found in session, interview results not saved to MongoDB');
+        }
+      } catch (dbError) {
+        console.error('Error saving interview results to MongoDB:', dbError);
+        // Continue with the response even if saving to DB fails
+      }
+
       return NextResponse.json(transformedData);
     } catch (fetchError) {
       console.error('Error connecting to Flask backend:', fetchError);
-      // Return evaluated data when Flask server is unavailable
-      return NextResponse.json(evaluateInterviewEnd(body.session_id || body.interview_id, body));
+      // Evaluate the interview locally
+      const evaluatedData = evaluateInterviewEnd(body.session_id || body.interview_id, body);
+
+      // Save the fallback results to MongoDB
+      try {
+        const session = await getServerSession(authOptions);
+        const email = session?.user?.email;
+
+        if (email) {
+          const client = await clientPromise;
+          const db = client.db();
+
+          // Save the interview result
+          await db.collection('interviews').insertOne({
+            email,
+            timestamp: new Date(),
+            interview_id: evaluatedData.interview_id,
+            content_score: evaluatedData.overall_feedback.content_score,
+            communication_score: evaluatedData.overall_feedback.communication_score,
+            overall_score: evaluatedData.overall_feedback.overall_score,
+            detailed_scores: evaluatedData.overall_feedback.detailed_scores,
+            strengths: evaluatedData.overall_feedback.strengths,
+            areas_for_improvement: evaluatedData.overall_feedback.areas_for_improvement,
+            is_fallback: true
+          });
+
+          console.log(`Saved fallback interview result for ${email} with ID ${evaluatedData.interview_id}`);
+
+          // Update user's weak topics based on areas for improvement
+          const weakTopics = evaluatedData.overall_feedback.areas_for_improvement
+            .map((area: string) => {
+              // Extract the main topic from the improvement area
+              const topicMatch = area.match(/^(\w+)/);
+              return topicMatch ? topicMatch[0] : null;
+            })
+            .filter(Boolean); // Remove null values
+
+          if (weakTopics.length > 0) {
+            // Get the user's current weak topics
+            const user = await db.collection('users').findOne({ email });
+            const currentWeakTopics = user?.weaktopics || [];
+
+            // Combine current and new weak topics, remove duplicates
+            const updatedWeakTopics = [...new Set([...currentWeakTopics, ...weakTopics])];
+
+            // Update the user's weak topics
+            await db.collection('users').updateOne(
+              { email },
+              { $set: { weaktopics: updatedWeakTopics } },
+              { upsert: true }
+            );
+
+            console.log(`Updated weak topics for ${email} (fallback):`, updatedWeakTopics);
+          }
+        } else {
+          console.warn('No user email found in session, fallback interview results not saved to MongoDB');
+        }
+      } catch (dbError) {
+        console.error('Error saving fallback interview results to MongoDB:', dbError);
+        // Continue with the response even if saving to DB fails
+      }
+
+      // Return the evaluated data
+      return NextResponse.json(evaluatedData);
     }
   } catch (error) {
     console.error('Error in proxy API route:', error);
-    // Return evaluated data for any other errors
-    return NextResponse.json({
-      ...evaluateInterviewEnd('unknown-session'),
+    // Evaluate the interview locally for any other errors
+    const evaluatedData = evaluateInterviewEnd('unknown-session');
+    const responseData = {
+      ...evaluatedData,
       warning: `Encountered an error: ${error instanceof Error ? error.message : String(error)}. Using locally evaluated data instead.`
-    });
+    };
+
+    // Try to save the emergency fallback results to MongoDB
+    try {
+      const session = await getServerSession(authOptions);
+      const email = session?.user?.email;
+
+      if (email) {
+        const client = await clientPromise;
+        const db = client.db();
+
+        // Save the interview result
+        await db.collection('interviews').insertOne({
+          email,
+          timestamp: new Date(),
+          interview_id: evaluatedData.interview_id || 'emergency-fallback',
+          content_score: evaluatedData.overall_feedback.content_score,
+          communication_score: evaluatedData.overall_feedback.communication_score,
+          overall_score: evaluatedData.overall_feedback.overall_score,
+          detailed_scores: evaluatedData.overall_feedback.detailed_scores,
+          strengths: evaluatedData.overall_feedback.strengths,
+          areas_for_improvement: evaluatedData.overall_feedback.areas_for_improvement,
+          is_emergency_fallback: true,
+          error: error instanceof Error ? error.message : String(error)
+        });
+
+        console.log(`Saved emergency fallback interview result for ${email}`);
+
+        // Update user's weak topics with some default topics
+        const defaultWeakTopics = ['Communication', 'Preparation', 'Technical'];
+
+        // Get the user's current weak topics
+        const user = await db.collection('users').findOne({ email });
+        const currentWeakTopics = user?.weaktopics || [];
+
+        // Combine current and default weak topics, remove duplicates
+        const updatedWeakTopics = [...new Set([...currentWeakTopics, ...defaultWeakTopics])];
+
+        // Update the user's weak topics
+        await db.collection('users').updateOne(
+          { email },
+          { $set: { weaktopics: updatedWeakTopics } },
+          { upsert: true }
+        );
+
+        console.log(`Updated weak topics for ${email} (emergency fallback):`, updatedWeakTopics);
+      }
+    } catch (dbError) {
+      console.error('Error saving emergency fallback interview results to MongoDB:', dbError);
+      // Continue with the response even if saving to DB fails
+    }
+
+    return NextResponse.json(responseData);
   }
 }

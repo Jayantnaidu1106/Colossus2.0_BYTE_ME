@@ -331,6 +331,22 @@ export default function MockInterviewPage() {
       return;
     }
 
+    // Prepare video analysis data with higher values to ensure good scores
+    const videoAnalysisData = {
+      eye_contact: Math.random() * 0.3 + 0.7, // Random value between 0.7 and 1.0
+      facial_expressions: Math.random() * 0.3 + 0.7,
+      posture: Math.random() * 0.3 + 0.7,
+      engagement: Math.random() * 0.3 + 0.7
+    };
+
+    // Prepare audio analysis data with higher values to ensure good scores
+    const audioAnalysisData = {
+      speaking_pace: Math.random() * 0.3 + 0.7, // Random value between 0.7 and 1.0
+      voice_clarity: Math.random() * 0.3 + 0.7,
+      filler_words: Math.random() * 0.3 + 0.7,
+      tone: Math.random() * 0.3 + 0.7
+    };
+
     setIsLoading(true);
     try {
       const currentQuestion = session.questions[session.currentQuestionIndex];
@@ -349,22 +365,6 @@ export default function MockInterviewPage() {
         alert('Unable to capture video frame. Please ensure your camera is working properly.');
         return;
       }
-
-      // Prepare video analysis data with higher values to ensure good scores
-      const videoAnalysisData = {
-        eye_contact: Math.random() * 0.3 + 0.7, // Random value between 0.7 and 1.0
-        facial_expressions: Math.random() * 0.3 + 0.7,
-        posture: Math.random() * 0.3 + 0.7,
-        engagement: Math.random() * 0.3 + 0.7
-      };
-
-      // Prepare audio analysis data with higher values to ensure good scores
-      const audioAnalysisData = {
-        speaking_pace: Math.random() * 0.3 + 0.7, // Random value between 0.7 and 1.0
-        voice_clarity: Math.random() * 0.3 + 0.7,
-        filler_words: Math.random() * 0.3 + 0.7,
-        tone: Math.random() * 0.3 + 0.7
-      };
 
       console.log('Sending analysis data:', { videoAnalysisData, audioAnalysisData });
 

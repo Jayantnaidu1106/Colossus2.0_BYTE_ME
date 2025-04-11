@@ -18,7 +18,7 @@ function runCommand(command) {
 // Check if .env file exists, create it if not
 const envPath = path.join(__dirname, "..", ".env");
 if (!fs.existsSync(envPath)) {
-  console.log("Creating .env file...");
+  console.log("Creating .env file..."); 
   const envContent = `DATABASE_URL="mongodb://localhost:27017/atlas-ai"
 NEXTAUTH_SECRET="your-secret-key-change-this-in-production"
 NEXTAUTH_URL="http://localhost:3000"

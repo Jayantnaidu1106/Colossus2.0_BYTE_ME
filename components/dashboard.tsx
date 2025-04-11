@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts"
 import {
   Brain, FileQuestion, LogOut, Video, BookOpen, ChevronRight,
@@ -26,20 +26,37 @@ const motivationalQuotes = [
   "The beautiful thing about learning is that no one can take it away from you. — B.B. King",
 ]
 
+interface PerformanceItem {
+  quizNumber: number
+  marks: number
+  type: string
+  contentScore?: number
+  communicationScore?: number
+  date?: string
+}
+
+interface InterviewResult {
+  id: string
+  date: string
+  content_score: number
+  communication_score: number
+  overall_score: number
+}
+
 interface DashboardData {
   user: {
     name: string
   }
-  performanceData: {
-    quizNumber: number
-    marks: number
-  }[]
+  performanceData: PerformanceItem[]
   weakTopics: string[]
   onlineDates: any[]
+  hasInterviewData: boolean
+  interviewData: any[]
 }
 
 export default function Dashboard() {
   const [randomQuote, setRandomQuote] = useState("")
+  const [chartFilter, setChartFilter] = useState<'all' | 'quiz' | 'interview'>('all')
   const { data: session, status } = useSession()
   const router = useRouter()
 
@@ -48,43 +65,128 @@ export default function Dashboard() {
     performanceData: [],
     weakTopics: [],
     onlineDates: [],
+    hasInterviewData: false,
+    interviewData: []
   })
 
   const [loading, setLoading] = useState(true)
 
   const fetchDashboardData = async () => {
     try {
-      const res = await fetch("/api/dashboard", {
-        method: "POST",
-        body: JSON.stringify({ email: session?.user?.email }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      // Fetch combined stats from our new API endpoint
+      const res = await fetch("/api/dashboard/combined-stats")
 
-      if (!res.ok) throw new Error("Failed to fetch")
-
-      const data = await res.json()
-
-      // Build performanceData from result if needed
-      let performanceArray = []
-      if (Array.isArray(data.performanceData) && data.performanceData.length > 0) {
-        performanceArray = data.performanceData
-      } else if (data.result && typeof data.result === "object") {
-        performanceArray = Object.entries(data.result).map(([quizNumber, marks]) => ({
-          quizNumber: Number(quizNumber),
-          marks: Number(marks),
-        }))
+      if (!res.ok) {
+        throw new Error(`Failed to fetch dashboard data: ${res.status} ${res.statusText}`)
       }
 
-      setDashboardData({
-        user: {
-          name: data.user?.name || "User",
-        },
-        performanceData: performanceArray,
-        weakTopics: Array.isArray(data.weakTopics) ? data.weakTopics : [],
-        onlineDates: data.onlineDates || [],
-      })
+      const data = await res.json()
+      console.log('Fetched combined dashboard stats:', data)
+
+      if (data.success) {
+        // Set dashboard data from the combined stats
+        setDashboardData({
+          user: {
+            name: data.user?.name || session?.user?.name || "User",
+          },
+          performanceData: data.performanceData || [],
+          weakTopics: data.weakTopics || [],
+          onlineDates: data.onlineDates || [],
+          hasInterviewData: data.hasInterviewData || false,
+          interviewData: data.interviews || []
+        })
+      } else {
+        // Fallback to old method if the new API fails
+        console.error('Combined stats API returned an error:', data.error)
+
+        // Fetch basic dashboard data using the old method
+        const oldRes = await fetch("/api/dashboard", {
+          method: "POST",
+          body: JSON.stringify({ email: session?.user?.email }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!oldRes.ok) throw new Error("Failed to fetch dashboard data using old method")
+
+        const oldData = await oldRes.json()
+
+        // Build performanceData from result if needed
+        let performanceArray = []
+        if (Array.isArray(oldData.performanceData) && oldData.performanceData.length > 0) {
+          performanceArray = oldData.performanceData
+        } else if (oldData.result && typeof oldData.result === "object") {
+          performanceArray = Object.entries(oldData.result).map(([quizNumber, marks]) => ({
+            quizNumber: Number(quizNumber),
+            marks: Number(marks),
+            type: 'quiz'
+          }))
+        }
+
+        // Try to fetch interview stats separately
+        try {
+          const statsRes = await fetch("/api/dashboard/stats")
+
+          if (statsRes.ok) {
+            const statsData = await statsRes.json()
+            console.log('Fetched interview stats:', statsData)
+
+            // Add interview data to performance array
+            if (statsData.interviews && statsData.interviews.length > 0) {
+              const interviewPerformance = statsData.interviews.map((interview: InterviewResult, index: number) => ({
+                quizNumber: performanceArray.length + index + 1, // Continue numbering from quiz data
+                marks: interview.overall_score * 100, // Convert from 0-1 scale to 0-100
+                contentScore: interview.content_score,
+                communicationScore: interview.communication_score,
+                type: 'interview',
+                date: new Date(interview.date).toLocaleDateString()
+              }))
+
+              // Combine quiz and interview data
+              performanceArray = [...performanceArray, ...interviewPerformance]
+            }
+
+            setDashboardData({
+              user: {
+                name: oldData.user?.name || session?.user?.name || "User",
+              },
+              performanceData: performanceArray,
+              weakTopics: statsData.weakTopics || (Array.isArray(oldData.weakTopics) ? oldData.weakTopics : []),
+              onlineDates: oldData.onlineDates || [],
+              hasInterviewData: statsData.interviews && statsData.interviews.length > 0,
+              interviewData: statsData.interviews || []
+            })
+          } else {
+            // If stats API fails, use only the basic dashboard data
+            console.error('Failed to fetch interview stats:', await statsRes.text())
+
+            setDashboardData({
+              user: {
+                name: oldData.user?.name || session?.user?.name || "User",
+              },
+              performanceData: performanceArray,
+              weakTopics: Array.isArray(oldData.weakTopics) ? oldData.weakTopics : [],
+              onlineDates: oldData.onlineDates || [],
+              hasInterviewData: oldData.hasInterviewData || false,
+              interviewData: oldData.interviewData || []
+            })
+          }
+        } catch (statsError) {
+          console.error('Error fetching interview stats:', statsError)
+
+          setDashboardData({
+            user: {
+              name: oldData.user?.name || session?.user?.name || "User",
+            },
+            performanceData: performanceArray,
+            weakTopics: Array.isArray(oldData.weakTopics) ? oldData.weakTopics : [],
+            onlineDates: oldData.onlineDates || [],
+            hasInterviewData: oldData.hasInterviewData || false,
+            interviewData: oldData.interviewData || []
+          })
+        }
+      }
 
     } catch (error) {
       console.error("Error loading dashboard:", error)
@@ -93,6 +195,8 @@ export default function Dashboard() {
         performanceData: [],
         weakTopics: [],
         onlineDates: [],
+        hasInterviewData: false,
+        interviewData: []
       })
     } finally {
       setLoading(false)
@@ -156,6 +260,49 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        {/* Performance Summary */}
+        <motion.div
+          className="mb-8 bg-white/90 backdrop-blur-sm rounded-xl shadow-md overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Performance Summary</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Quiz Stats */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <p className="text-sm text-green-600 mb-1">Total Quizzes</p>
+                <p className="text-2xl font-bold text-green-700">{dashboardData.performanceData.filter(item => item.type === 'quiz').length}</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-600 mb-1">Avg. Quiz Score</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  {dashboardData.performanceData.filter(item => item.type === 'quiz').length > 0
+                    ? (dashboardData.performanceData.filter(item => item.type === 'quiz').reduce((sum, item) => sum + item.marks, 0) /
+                      dashboardData.performanceData.filter(item => item.type === 'quiz').length).toFixed(1) + '%'
+                    : 'N/A'}
+                </p>
+              </div>
+
+              {/* Interview Stats */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <p className="text-sm text-purple-600 mb-1">Total Interviews</p>
+                <p className="text-2xl font-bold text-purple-700">{dashboardData.performanceData.filter(item => item.type === 'interview').length}</p>
+              </div>
+              <div className="bg-indigo-50 p-4 rounded-lg">
+                <p className="text-sm text-indigo-600 mb-1">Avg. Interview Score</p>
+                <p className="text-2xl font-bold text-indigo-700">
+                  {dashboardData.performanceData.filter(item => item.type === 'interview').length > 0
+                    ? (dashboardData.performanceData.filter(item => item.type === 'interview').reduce((sum, item) => sum + item.marks, 0) /
+                      dashboardData.performanceData.filter(item => item.type === 'interview').length).toFixed(1) + '%'
+                    : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Graph and Weak Topics */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
           <motion.div className="lg:col-span-3 bg-white/90 backdrop-blur-sm rounded-xl shadow-md overflow-hidden"
@@ -164,21 +311,101 @@ export default function Dashboard() {
             transition={{ duration: 0.5 }}
           >
             <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Performance Tracker</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-800">Performance Tracker</h2>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setChartFilter('all')}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${chartFilter === 'all' ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setChartFilter('quiz')}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${chartFilter === 'quiz' ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                  >
+                    Quizzes
+                  </button>
+                  {dashboardData.hasInterviewData && (
+                    <button
+                      onClick={() => setChartFilter('interview')}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${chartFilter === 'interview' ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    >
+                      Interviews
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dashboardData.performanceData}>
+                  <AreaChart
+                    data={dashboardData.performanceData.filter(item =>
+                      chartFilter === 'all' ? true :
+                      item.type.toLowerCase() === chartFilter
+                    )}>
                     <defs>
                       <linearGradient id="colorMarks" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#4ade80" stopOpacity={0.8} />
                         <stop offset="95%" stopColor="#4ade80" stopOpacity={0.2} />
                       </linearGradient>
+                      <linearGradient id="colorContent" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.2} />
+                      </linearGradient>
+                      <linearGradient id="colorCommunication" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.2} />
+                      </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="quizNumber" />
                     <YAxis domain={[0, 100]} />
-                    <Tooltip formatter={(value) => [`${value} marks`, "Score"]} labelFormatter={(label) => `Quiz ${label}`} />
-                    <Area type="monotone" dataKey="marks" stroke="#4ade80" fillOpacity={1} fill="url(#colorMarks)" activeDot={{ r: 8 }} />
+                    <Tooltip
+                      formatter={(value, name) => {
+                        const formattedName = {
+                          marks: 'Overall Score',
+                          contentScore: 'Content Score',
+                          communicationScore: 'Communication Score'
+                        }[name] || name;
+                        return [`${value}`, formattedName];
+                      }}
+                      labelFormatter={(label) => {
+                        const item = dashboardData.performanceData.find(d => d.quizNumber === label);
+                        return item ? `${item.type} ${label}` : `Assessment ${label}`;
+                      }}
+                    />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="marks"
+                      name="Overall Score"
+                      stroke="#4ade80"
+                      fillOpacity={1}
+                      fill="url(#colorMarks)"
+                      activeDot={{ r: 8 }}
+                    />
+                    {/* Only show these lines for interview data */}
+                    {(chartFilter === 'interview' || chartFilter === 'all') && dashboardData.hasInterviewData && (
+                      <>
+                        <Area
+                          type="monotone"
+                          dataKey="contentScore"
+                          stroke="#3b82f6"
+                          fillOpacity={0.6}
+                          fill="url(#colorContent)"
+                          name="contentScore"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="communicationScore"
+                          stroke="#8b5cf6"
+                          fillOpacity={0.6}
+                          fill="url(#colorCommunication)"
+                          name="communicationScore"
+                        />
+                      </>
+                    )}
+                    {/* Removed duplicate area components */}
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -196,18 +423,143 @@ export default function Dashboard() {
                 <CardDescription className="text-gray-600">Focus on these topics to boost your performance</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-3">
-                  {dashboardData.weakTopics.map((topic, index) => (
-                    <motion.li key={index} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.1 * index }} className="flex items-start">
-                      <Badge variant="destructive" className="mr-2 mt-1">{index + 1}</Badge>
-                      <span className="text-gray-700">{topic}</span>
-                    </motion.li>
-                  ))}
-                </ul>
+                {/* Group weak topics by type */}
+                {(() => {
+                  const quizTopics = dashboardData.weakTopics.filter(topic => !topic.startsWith('Interview:'));
+                  const interviewTopics = dashboardData.weakTopics.filter(topic => topic.startsWith('Interview:'));
+
+                  return (
+                    <div className="space-y-4">
+                      {quizTopics.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                            Quiz Weak Areas
+                          </h3>
+                          <ul className="space-y-2 pl-5">
+                            {quizTopics.map((topic, index) => (
+                              <motion.li
+                                key={`quiz-${index}`}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.3, delay: 0.1 * index }}
+                                className="text-gray-700 text-sm list-disc"
+                              >
+                                {topic}
+                              </motion.li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {interviewTopics.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                            Interview Weak Areas
+                          </h3>
+                          <ul className="space-y-2 pl-5">
+                            {interviewTopics.map((topic, index) => (
+                              <motion.li
+                                key={`interview-${index}`}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.3, delay: 0.1 * index }}
+                                className="text-gray-700 text-sm list-disc"
+                              >
+                                {topic.replace('Interview: ', '')}
+                              </motion.li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {dashboardData.weakTopics.length === 0 && (
+                        <p className="text-gray-500 text-sm italic">No weak areas identified yet. Complete more assessments to get personalized feedback.</p>
+                      )}
+                    </div>
+                  );
+                })()}
+
               </CardContent>
             </Card>
           </motion.div>
         </div>
+
+        {/* Interview Performance Breakdown (conditionally rendered) */}
+        {dashboardData.hasInterviewData && (
+          <motion.div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 mb-8 shadow-md"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Interview Performance Breakdown</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-medium text-gray-700 mb-3">Communication Skills</h3>
+                <div className="space-y-3">
+                  {dashboardData.interviewData[0]?.overallFeedback?.detailed_scores &&
+                    Object.entries(dashboardData.interviewData[0].overallFeedback.detailed_scores)
+                      .filter(([key]) => ['eye_contact', 'facial_expressions', 'speaking_pace', 'voice_clarity', 'filler_words'].includes(key))
+                      .map(([key, value]) => {
+                        const score = typeof value === 'number' ? value : 0;
+                        const formattedKey = key.replace('_', ' ');
+                        const displayScore = Math.round(score * 100);
+                        const getColorClass = (score: number) => {
+                          if (score >= 0.8) return 'bg-green-500';
+                          if (score >= 0.6) return 'bg-yellow-500';
+                          return 'bg-red-500';
+                        };
+                        return (
+                          <div key={key} className="flex items-center">
+                            <span className="w-32 text-sm capitalize">{formattedKey}</span>
+                            <div className="flex-1 bg-gray-200 rounded-full h-2.5 mx-2">
+                              <div
+                                className={`h-2.5 rounded-full ${getColorClass(score)}`}
+                                style={{ width: `${displayScore}%` }}
+                              ></div>
+                            </div>
+                            <span className="w-10 text-sm font-medium text-right">{displayScore}%</span>
+                          </div>
+                        );
+                      })
+                  }
+                </div>
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-700 mb-3">Content Quality</h3>
+                <div className="space-y-3">
+                  {dashboardData.interviewData[0]?.overallFeedback?.detailed_scores &&
+                    Object.entries(dashboardData.interviewData[0].overallFeedback.detailed_scores)
+                      .filter(([key]) => ['relevance', 'completeness', 'clarity'].includes(key))
+                      .map(([key, value]) => {
+                        const score = typeof value === 'number' ? value : 0;
+                        const formattedKey = key.replace('_', ' ');
+                        const displayScore = Math.round(score * 100);
+                        const getColorClass = (score: number) => {
+                          if (score >= 0.8) return 'bg-blue-500';
+                          if (score >= 0.6) return 'bg-yellow-500';
+                          return 'bg-red-500';
+                        };
+                        return (
+                          <div key={key} className="flex items-center">
+                            <span className="w-32 text-sm capitalize">{formattedKey}</span>
+                            <div className="flex-1 bg-gray-200 rounded-full h-2.5 mx-2">
+                              <div
+                                className={`h-2.5 rounded-full ${getColorClass(score)}`}
+                                style={{ width: `${displayScore}%` }}
+                              ></div>
+                            </div>
+                            <span className="w-10 text-sm font-medium text-right">{displayScore}%</span>
+                          </div>
+                        );
+                      })
+                  }
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Motivational Quote */}
         <motion.div className="bg-white backdrop-blur-sm rounded-xl p-6 mb-8 border border-primary/20"
@@ -233,11 +585,11 @@ export default function Dashboard() {
             <Card className="h-full bg-white/90 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center text-gray-800"><Brain className="h-6 w-6 mr-2 text-primary" /> AI Personal Tutor</CardTitle>
-                <CardDescription className="text-gray-600">Get personalized help with any subject or topic</CardDescription>
+                <CardDescription className="text-gray-600">Get personalized help powered by Google Gemini</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col h-full">
                 <p className="text-gray-600 mb-4">
-                  Your AI tutor adapts to your learning style and provides explanations tailored to your needs.
+                  Your AI tutor powered by Google Gemini adapts to your learning style and provides explanations tailored to your needs and weak areas.
                 </p>
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {["Math", "Science", "History", "Literature", "Languages", "Coding"].map(subject => (

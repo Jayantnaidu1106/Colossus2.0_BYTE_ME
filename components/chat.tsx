@@ -58,6 +58,8 @@ export default function Chat() {
 
     try {
       // Send the message to your backend
+      console.log('Sending message to API:', input.substring(0, 100) + (input.length > 100 ? '...' : ''));
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -66,27 +68,61 @@ export default function Chat() {
         body: JSON.stringify({
           message: input,
           context: "This is an educational AI mentor conversation",
-          email: session?.user?.email || '',
+          email: session?.user?.email || 'guest@example.com', // Provide a default email for testing
         }),
       })
 
+      // Log response status to help with debugging
+      console.log('API response status:', response.status);
+
       if (!response.ok) {
-        throw new Error("Failed to get response from AI")
+        const errorText = await response.text();
+        console.error('Error response text:', errorText);
+        throw new Error(`Failed to get response from AI: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
 
       // Extract the text from the API response
       let responseText = "Sorry, I couldn't process your request."
-      if (
+
+      // Log the response structure to help with debugging
+      console.log('API response structure:', JSON.stringify(data, null, 2).substring(0, 500) + '...');
+
+      // Handle different response formats
+      if (data.text) {
+        // Direct text response
+        responseText = data.text;
+      } else if (
         data.response &&
         data.response.candidates &&
         data.response.candidates.length > 0 &&
         data.response.candidates[0].content &&
         data.response.candidates[0].content.parts &&
-        data.response.candidates[0].content.parts.length > 0
+        data.response.candidates[0].content.parts.length > 0 &&
+        data.response.candidates[0].content.parts[0].text
       ) {
+        // Old format response
         responseText = data.response.candidates[0].content.parts[0].text
+      } else if (data.error) {
+        // If there's an error message, use that
+        responseText = `Error: ${data.error}. Please try again later.`
+        console.error('Error in API response:', data.error);
+      } else if (data.warning) {
+        // If there's a warning message
+        responseText = `I encountered an issue: ${data.warning}. Here's what I can tell you: ${data.text || ''}`
+        console.warn('Warning in API response:', data.warning);
+      }
+
+      // Check if there's a warning to display
+      let finalResponseText = responseText;
+      if (data.warning) {
+        console.warn('API warning:', data.warning);
+
+        // Only add the warning to the message if it's about the API key
+        if (data.warning.includes('API key')) {
+          finalResponseText = `${responseText}\n\n---\n*Note: I'm currently using a fallback system because the Gemini API key is not properly configured. My responses may be limited. Please contact the administrator to fix this issue.*`;
+        }
       }
 
       // Add AI response to the chat
@@ -95,21 +131,24 @@ export default function Chat() {
         {
           id: Date.now().toString(),
           role: "assistant",
-          content: responseText,
+          content: finalResponseText,
         },
       ])
     } catch (error) {
       console.error("Error sending message:", error)
 
-      // Add error message
+      // Add error message with retry option
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
           role: "assistant",
-          content: "I'm having trouble connecting right now. Please try again later.",
+          content: "I'm having trouble connecting right now. This could be due to the Gemini API being unavailable. Please try again later or check your API key configuration.",
         },
       ])
+
+      // Log detailed error for debugging
+      console.error('Detailed error information:', error)
     } finally {
       setIsLoading(false)
     }
@@ -135,7 +174,22 @@ export default function Chat() {
       <header className="p-4 border-b border-gray-200 bg-white shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Atlas AI</h1>
-          <p className="text-sm text-gray-500">Your Personal Mentor</p>
+          <div className="flex items-center gap-4">
+            {messages.length > 0 && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to clear this conversation?')) {
+                    setMessages([]);
+                    localStorage.removeItem('atlas-ai-messages');
+                  }
+                }}
+                className="text-sm px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+              >
+                Clear Chat
+              </button>
+            )}
+            <p className="text-sm text-gray-500">Your Personal Mentor <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">Powered by Google Gemini</span></p>
+          </div>
         </div>
       </header>
 
@@ -146,8 +200,9 @@ export default function Chat() {
             <div className="p-6 rounded-lg bg-white shadow-md border border-gray-100">
               <h2 className="text-xl font-semibold mb-3 text-gray-900">Welcome to Atlas AI</h2>
               <p className="text-gray-600 leading-relaxed">
-                This is your AI mentor. You can ask any questions without hesitation, and I'll do my best to provide
-                helpful, educational guidance. What would you like to learn today?
+                This is your AI mentor powered by Google Gemini. You can ask any questions without hesitation, and I'll do my best to provide
+                helpful, educational guidance tailored to your needs. I can even focus on your weak areas to help you improve.
+                What would you like to learn today?
               </p>
             </div>
           )}

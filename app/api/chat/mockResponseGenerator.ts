@@ -2,13 +2,19 @@
 
 // Function to generate a mock response based on the user's message and weak topics
 export function generateMockResponse(message: string, weakTopics: string[]): string {
+  console.log('Generating mock response for:', message.substring(0, 50) + '...');
+
   // Convert message to lowercase for easier matching
   const lowerMessage = message.toLowerCase();
-  
+
+  // Extract keywords from the message
+  const keywords = lowerMessage.split(/\s+/).filter(word => word.length > 3);
+  console.log('Extracted keywords:', keywords);
+
   // Check if the message contains math-related keywords
-  if (lowerMessage.includes('math') || 
-      lowerMessage.includes('algebra') || 
-      lowerMessage.includes('equation') || 
+  if (lowerMessage.includes('math') ||
+      lowerMessage.includes('algebra') ||
+      lowerMessage.includes('equation') ||
       lowerMessage.includes('calculus') ||
       lowerMessage.includes('solve')) {
     if (weakTopics.includes('Algebra') || weakTopics.includes('Math')) {
@@ -23,11 +29,11 @@ Does this help with your question? Feel free to ask for more specific examples i
 I hope this helps! Let me know if you need more clarification.`;
     }
   }
-  
+
   // Check if the message contains science-related keywords
-  else if (lowerMessage.includes('science') || 
-           lowerMessage.includes('chemistry') || 
-           lowerMessage.includes('physics') || 
+  else if (lowerMessage.includes('science') ||
+           lowerMessage.includes('chemistry') ||
+           lowerMessage.includes('physics') ||
            lowerMessage.includes('biology')) {
     if (weakTopics.includes('Chemistry') || weakTopics.includes('Physics')) {
       return `I see you're asking about science, which is one of the areas you're working to strengthen. Let me help you with that!
@@ -41,15 +47,19 @@ Does this explanation make sense? I'm happy to provide more examples if needed.`
 I hope this helps with your understanding! Let me know if you'd like to explore this topic further.`;
     }
   }
-  
+
   // Default response for other types of questions
   else {
-    return `Thank you for your question! I'd be happy to help you with that.
+    // Create a more personalized response based on the message
+    let responseIntro = `Thank you for your question about "${message.substring(0, 30)}${message.length > 30 ? '...' : ''}"! I'd be happy to help you with that.`;
 
-${message.trim().endsWith('?') ? 'To answer your question: ' : 'Here\'s what I can tell you: '}
-${getRandomGeneralResponse()}
+    // Include some of the keywords in the response
+    if (keywords.length > 0) {
+      const topKeywords = keywords.slice(0, 3);
+      responseIntro += `\n\nI see you're interested in ${topKeywords.join(', ')}. That's a fascinating topic!`;
+    }
 
-Is there anything specific about this topic you'd like me to explain in more detail?`;
+    return `${responseIntro}\n\n${message.trim().endsWith('?') ? 'To answer your question: ' : 'Here\'s what I can tell you: '}\n${getRandomGeneralResponse()}\n\nIs there anything specific about this topic you'd like me to explain in more detail?`;
   }
 }
 
