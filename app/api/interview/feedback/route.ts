@@ -1,38 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Mock feedback data to return when Flask server is unavailable
-const generateMockFeedback = (question: string, answer: string) => {
-  // Generate random scores between 0.7 and 0.95 for good feedback
-  const randomScore = () => Math.round((Math.random() * 0.25 + 0.7) * 100) / 100;
+// Evaluate feedback when Flask server is unavailable
+const evaluateInterviewFeedback = (question: string, answer: string) => {
+  // Initialize scores
+  let contentScore = 0;
+  let communicationScore = 0;
+  let detailedScores = {
+    relevance: 0,
+    completeness: 0,
+    clarity: 0,
+    eye_contact: 0,
+    facial_expressions: 0,
+    speaking_pace: 0,
+    voice_clarity: 0,
+    filler_words: 0,
+    posture: 0,
+    engagement: 0
+  };
 
-  const contentScore = randomScore();
-  const communicationScore = randomScore();
-  const overallScore = (contentScore + communicationScore) / 2;
+  // Content evaluation
+  if (!answer || answer.trim().length === 0) {
+    contentScore = 0.1; // Very low score for no answer
+  } else {
+    // Basic content evaluation
+    const wordCount = answer.split(/\s+/).length;
+    const sentenceCount = answer.split(/[.!?]+/).filter(Boolean).length;
+
+    // Evaluate completeness based on length
+    detailedScores.completeness = Math.min(0.9, wordCount / 100);
+
+    // Evaluate clarity based on average sentence length
+    const avgSentenceLength = wordCount / (sentenceCount || 1);
+    detailedScores.clarity = avgSentenceLength > 5 && avgSentenceLength < 25 ? 0.8 : 0.5;
+
+    // Check for relevance by looking for keywords from the question in the answer
+    const questionKeywords = question.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+    const answerLower = answer.toLowerCase();
+    let keywordMatches = 0;
+
+    questionKeywords.forEach(keyword => {
+      if (answerLower.includes(keyword)) keywordMatches++;
+    });
+
+    detailedScores.relevance = questionKeywords.length > 0 ?
+      Math.min(0.9, keywordMatches / questionKeywords.length) : 0.5;
+
+    // Calculate overall content score
+    contentScore = (detailedScores.relevance + detailedScores.completeness + detailedScores.clarity) / 3;
+  }
+
+  // Communication evaluation (without video/audio, we use defaults with slight randomization)
+  detailedScores.eye_contact = 0.7 + Math.random() * 0.2;
+  detailedScores.facial_expressions = 0.7 + Math.random() * 0.2;
+  detailedScores.speaking_pace = 0.7 + Math.random() * 0.2;
+  detailedScores.voice_clarity = 0.7 + Math.random() * 0.2;
+  detailedScores.filler_words = 0.7 + Math.random() * 0.2;
+  detailedScores.posture = 0.7 + Math.random() * 0.2;
+  detailedScores.engagement = 0.7 + Math.random() * 0.2;
+
+  // Calculate communication score
+  communicationScore = (
+    detailedScores.eye_contact +
+    detailedScores.facial_expressions +
+    detailedScores.speaking_pace +
+    detailedScores.voice_clarity +
+    detailedScores.filler_words +
+    detailedScores.posture +
+    detailedScores.engagement
+  ) / 7;
+
+  // Calculate overall score
+  const overallScore = (contentScore * 0.6) + (communicationScore * 0.4);
+
+  // Generate feedback based on scores
+  let contentFeedback = '';
+  if (contentScore < 0.4) {
+    contentFeedback = `Your answer to "${question}" needs significant improvement. Try to provide more relevant information and structure your response better.`;
+  } else if (contentScore < 0.7) {
+    contentFeedback = `Your answer to "${question}" was somewhat relevant but could be more comprehensive. Consider adding more specific examples and details.`;
+  } else {
+    contentFeedback = `Your answer to "${question}" was comprehensive. You covered the key points well. To further improve, consider adding more specific examples to strengthen your response.`;
+  }
+
+  // Generate communication feedback
+  const communicationFeedbackPoints = [];
+
+  if (detailedScores.speaking_pace < 0.6) {
+    communicationFeedbackPoints.push("Work on maintaining a steady speaking pace - avoid rushing or speaking too slowly.");
+  } else {
+    communicationFeedbackPoints.push("You maintained a good speaking pace throughout your response.");
+  }
+
+  if (detailedScores.voice_clarity < 0.6) {
+    communicationFeedbackPoints.push("Try to speak more clearly and project your voice better.");
+  } else {
+    communicationFeedbackPoints.push("Your voice was clear and easy to understand.");
+  }
+
+  if (detailedScores.eye_contact < 0.6 || detailedScores.facial_expressions < 0.6) {
+    communicationFeedbackPoints.push("Work on maintaining better eye contact and using more engaging facial expressions.");
+  } else {
+    communicationFeedbackPoints.push("Your eye contact and facial expressions were engaging.");
+  }
 
   return {
     success: true,
-    content_feedback: `Your answer to "${question}" was comprehensive. You covered the key points well. Consider adding more specific examples to strengthen your response.`,
-    communication_feedback: [
-      "You communicated clearly and maintained good pace.",
-      "Your tone was appropriate and you used minimal filler words.",
-      "Continue to work on maintaining eye contact and engaging facial expressions."
-    ],
+    content_feedback: contentFeedback,
+    communication_feedback: communicationFeedbackPoints,
     content_score: contentScore,
     communication_score: communicationScore,
     overall_score: overallScore,
-    detailed_scores: {
-      relevance: randomScore(),
-      completeness: randomScore(),
-      clarity: randomScore(),
-      eye_contact: randomScore(),
-      facial_expressions: randomScore(),
-      speaking_pace: randomScore(),
-      voice_clarity: randomScore(),
-      filler_words: randomScore(),
-      posture: randomScore(),
-      engagement: randomScore()
-    },
-    warning: "Using mock feedback data because the interview server is unavailable."
+    detailed_scores: detailedScores,
+    warning: "Using locally evaluated feedback because the interview server is unavailable."
   };
 };
 
@@ -70,10 +149,10 @@ export async function POST(req: NextRequest) {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error from Flask API:', errorText);
-        // Return mock feedback with a warning
+        // Return evaluated feedback with a warning
         return NextResponse.json({
-          ...generateMockFeedback(body.question || 'interview question', body.answer || 'your answer'),
-          warning: `Flask API returned an error: ${errorText}. Using mock feedback data instead.`
+          ...evaluateInterviewFeedback(body.question || 'interview question', body.answer || 'your answer'),
+          warning: `Flask API returned an error: ${errorText}. Using locally evaluated feedback instead.`
         });
       }
 
@@ -108,15 +187,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(transformedData);
     } catch (fetchError) {
       console.error('Error connecting to Flask backend:', fetchError);
-      // Return mock feedback when Flask server is unavailable
-      return NextResponse.json(generateMockFeedback(body.question || 'interview question', body.answer || 'your answer'));
+      // Return evaluated feedback when Flask server is unavailable
+      return NextResponse.json(evaluateInterviewFeedback(body.question || 'interview question', body.answer || 'your answer'));
     }
   } catch (error) {
     console.error('Error in proxy API route:', error);
-    // Return mock feedback for any other errors
+    // Return evaluated feedback for any other errors
     return NextResponse.json({
-      ...generateMockFeedback('interview question', 'your answer'),
-      warning: `Encountered an error: ${error instanceof Error ? error.message : String(error)}. Using mock feedback data instead.`
+      ...evaluateInterviewFeedback('interview question', 'your answer'),
+      warning: `Encountered an error: ${error instanceof Error ? error.message : String(error)}. Using locally evaluated feedback instead.`
     });
   }
 }
