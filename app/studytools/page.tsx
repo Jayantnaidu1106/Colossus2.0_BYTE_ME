@@ -12,10 +12,7 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, MessageSquare, Mic, Sun, Moon, UserRound, Globe } from "lucide-react"
-import dynamic from "next/dynamic"
-
-// Dynamically import ParticlesWrapper to avoid SSR issues
-const ParticlesWrapper = dynamic(() => import("@/components/ParticlesWrapper"), { ssr: false })
+import StaticBackground from "@/components/StaticBackground"
 
 export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -31,33 +28,23 @@ export default function Home() {
   }
 
   return (
-    <div
-      className={`min-h-screen transition-colors duration-300 relative overflow-hidden ${
-        isDarkMode ? "bg-black" : "bg-white"
-      }`}
-    >
-      {/* Particles Background - Only show in dark mode */}
-      {isDarkMode && <ParticlesWrapper />}
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Static Background */}
+      <StaticBackground />
 
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-8">
           <header className="flex justify-between items-center mb-12">
-            <h1
-              className={`text-3xl font-bold ${
-                isDarkMode ? "text-white" : "text-gray-900"
-              }`}
-            >
+            <h1 className="text-3xl font-bold text-white">
               AI Summarizer Tools
             </h1>
             <Button
               variant="outline"
               size="icon"
               onClick={toggleTheme}
-              className={`rounded-full ${
-                isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-              }`}
+              className="rounded-full bg-gray-800 text-white border-gray-700"
             >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              <Sun className="h-5 w-5" />
             </Button>
           </header>
 
@@ -65,11 +52,7 @@ export default function Home() {
             {/* PDF Summarizer Card */}
             <Card
               onClick={() => router.push("/studytools/pdfsummarizer")}
-              className={`overflow-hidden ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white border-gray-700"
-                  : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
-              } hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}
+              className="overflow-hidden bg-gradient-to-br from-gray-900/50 to-gray-800/50 text-white border-gray-700 backdrop-blur-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative z-10"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/5 pointer-events-none" />
               <CardHeader className="relative z-10">
@@ -97,11 +80,7 @@ export default function Home() {
             {/* Text Summarizer Card */}
             <Card
               onClick={() => router.push("/studytools/textsummarizer")}
-              className={`overflow-hidden ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white border-gray-700"
-                  : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
-              } hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}
+              className="overflow-hidden bg-gradient-to-br from-gray-900/50 to-gray-800/50 text-white border-gray-700 backdrop-blur-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative z-10"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 pointer-events-none" />
               <CardHeader className="relative z-10">
@@ -109,12 +88,12 @@ export default function Home() {
                   <MessageSquare className="h-6 w-6 text-blue-600" />
                 </div>
                 <CardTitle className="text-xl">Text Summarizer</CardTitle>
-                <CardDescription className={isDarkMode ? "text-gray-300" : "text-gray-500"}>
+                <CardDescription className="text-gray-300">
                   Condense long articles and text content
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative z-10">
-                <p className={isDarkMode ? "text-gray-300" : "text-gray-600"}>
+                <p className="text-gray-300">
                   Paste your long-form content and receive a concise summary that captures the
                   essential points.
                 </p>
@@ -127,15 +106,11 @@ export default function Home() {
             </Card>
 
             {/* Voice Assistant Card */}
-       
+
 
             <Card
               onClick={() => router.push("/studytools/Voicechat")}
-              className={`overflow-hidden ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white border-gray-700"
-                  : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
-              } hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}
+              className="overflow-hidden bg-gradient-to-br from-gray-900/50 to-gray-800/50 text-white border-gray-700 backdrop-blur-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative z-10"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 pointer-events-none" />
               <CardHeader className="relative z-10">
@@ -143,12 +118,12 @@ export default function Home() {
                   <Globe className="h-6 w-6 text-indigo-600" />
                 </div>
                 <CardTitle className="text-xl">Multilingual Assistant</CardTitle>
-                <CardDescription className={isDarkMode ? "text-gray-300" : "text-gray-500"}>
+                <CardDescription className="text-gray-300">
                   Voice assistant with multiple language support
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative z-10">
-                <p className={isDarkMode ? "text-gray-300" : "text-gray-600"}>
+                <p className="text-gray-300">
                   Interact with your AI assistant in multiple languages. Automatic language detection and translation powered by Sarvam AI.
                 </p>
               </CardContent>
@@ -161,11 +136,7 @@ export default function Home() {
             {/* AI Mock Interview Card */}
             <Card
               onClick={() => router.push("/studytools/mockinterview")}
-              className={`overflow-hidden ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white border-gray-700"
-                  : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
-              } hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}
+              className="overflow-hidden bg-gradient-to-br from-gray-900/50 to-gray-800/50 text-white border-gray-700 backdrop-blur-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative z-10"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/5 pointer-events-none" />
               <CardHeader className="relative z-10">
@@ -173,12 +144,12 @@ export default function Home() {
                   <UserRound className="h-6 w-6 text-amber-600" />
                 </div>
                 <CardTitle className="text-xl">AI Mock Interview</CardTitle>
-                <CardDescription className={isDarkMode ? "text-gray-300" : "text-gray-500"}>
+                <CardDescription className="text-gray-300">
                   Practice interview skills with AI feedback
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative z-10">
-                <p className={isDarkMode ? "text-gray-300" : "text-gray-600"}>
+                <p className="text-gray-300">
                   Simulate job interviews with our AI interviewer and receive instant feedback to improve your performance.
                 </p>
               </CardContent>

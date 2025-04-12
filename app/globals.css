@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom animation */
+/* Custom animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -14,8 +14,30 @@
   }
 }
 
+@keyframes float {
+  0% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-10px) translateX(10px);
+  }
+  50% {
+    transform: translateY(0) translateX(20px);
+  }
+  75% {
+    transform: translateY(10px) translateX(10px);
+  }
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-float {
+  animation: float 20s infinite ease-in-out;
 }
 
 body {

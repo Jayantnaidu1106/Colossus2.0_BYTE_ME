@@ -1,69 +1,24 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 
-// Dynamically import Particles with error boundary
-const Particles = dynamic(() => import('./Particles').catch(err => {
-  console.error('Error loading Particles component:', err);
-  return () => null; // Return empty component on error
-}), {
+// Dynamically import SimpleBgParticles to avoid SSR issues
+const SimpleBgParticles = dynamic(() => import('./SimpleBgParticles'), {
   ssr: false,
   loading: () => null
 });
 
+// Define the colors outside the component to prevent re-renders
+const particleColors = ['#3b82f6', '#8b5cf6', '#d946ef', '#ec4899', '#0ea5e9', '#22d3ee', '#10b981', '#f97316', '#eab308'];
+
 const ParticlesWrapper: React.FC = () => {
-  const [isClient, setIsClient] = useState(false);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    try {
-      console.log('ParticlesWrapper mounted');
-      setIsClient(true);
-    } catch (error) {
-      console.error('Error in ParticlesWrapper useEffect:', error);
-      setHasError(true);
-    }
-  }, []);
-
-  // Don't render if we're not on client side or if there was an error
-  if (!isClient || hasError) {
-    return null;
-  }
-
-  // Wrap in try-catch to prevent unhandled errors
-  try {
-    console.log('ParticlesWrapper: Rendering particles');
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: 0,
-          pointerEvents: 'none',
-          background: 'transparent'
-        }}
-      >
-        <Particles
-          particleColors={['#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#0ea5e9']}
-          particleCount={2000}
-          particleSpread={15}
-          speed={0.20}
-          particleBaseSize={150}
-          moveParticlesOnHover={true}
-          alphaParticles={true}
-          disableRotation={false}
-          sizeRandomness={1.2}
-        />
-      </div>
-    );
-  } catch (error) {
-    console.error('Error rendering ParticlesWrapper:', error);
-    return null;
-  }
+  return (
+    <SimpleBgParticles
+      particleCount={200}
+      particleColors={particleColors}
+    />
+  );
 };
 
 export default ParticlesWrapper;

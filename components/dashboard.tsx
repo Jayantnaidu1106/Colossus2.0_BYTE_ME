@@ -15,10 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import dynamic from "next/dynamic"
-
-// Dynamically import ParticlesWrapper to avoid SSR issues
-const ParticlesWrapper = dynamic(() => import("./ParticlesWrapper"), { ssr: false })
+import StaticBackground from "./StaticBackground"
 
 const motivationalQuotes = [
   "The only way to learn mathematics is to do mathematics. — Paul Halmos",
@@ -224,7 +221,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-950 to-gray-900 flex items-center justify-center relative overflow-hidden">
         {/* Particles Background for loading state */}
-        <ParticlesWrapper />
+        <StaticBackground />
         <div className="text-center bg-white/20 backdrop-blur-md p-8 rounded-xl shadow-xl z-10">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-white">Loading your dashboard...</p>
@@ -236,7 +233,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-950 to-gray-900 relative overflow-hidden">
       {/* Particles Background */}
-      <ParticlesWrapper />
+      <StaticBackground />
       <header className="bg-white/90 backdrop-blur-sm shadow-md relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
