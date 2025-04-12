@@ -22,11 +22,11 @@ export default function Footer() {
           <p className="text-sm"> {new Date().getFullYear()} Atlas AI.</p>
           <div className="mt-4 md:mt-0">
             <a
-              href="mailto:himalayrekha@gmail.com"
+              href="mailto:jayantnaidu.4229@gmail.com"
               className="inline-flex items-center text-sm hover:text-white transition-colors"
             >
               <Mail size={16} className="mr-2" />
-              himalayrekha@gmail.com
+              jayantnaidu.4229@gmail.com
             </a>
           </div>
         </div>
