@@ -11,7 +11,10 @@ export async function POST(req: Request) {
     // Check if user with this email already exists
     const existingUser = await UserModel.findByEmail(email);
     if (existingUser) {
-      return new Response(JSON.stringify({ error: "Email already exists" }), {
+      return new Response(JSON.stringify({
+        success: false,
+        message: "Email already exists"
+      }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -27,6 +30,7 @@ export async function POST(req: Request) {
     });
 
     return new Response(JSON.stringify({
+      success: true,
       message: "User created successfully!!!",
       userId: newUser._id
     }), {
@@ -39,7 +43,10 @@ export async function POST(req: Request) {
 
     // Return a more descriptive error message
     const errorMessage = err instanceof Error ? err.message : "Unknown database error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({
+      success: false,
+      error: errorMessage
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

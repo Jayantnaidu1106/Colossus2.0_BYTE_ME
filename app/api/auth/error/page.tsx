@@ -15,7 +15,7 @@ export default function AuthError() {
   // Redirect to login after 5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/api/auth/signin")
+      router.push("/login")
     }, 5000)
 
     return () => clearTimeout(timer)
@@ -69,7 +69,7 @@ export default function AuthError() {
             You will be redirected to the login page in 5 seconds.
           </p>
           <div className="flex justify-center space-x-4">
-            <Link href="/api/auth/signin">
+            <Link href="/login">
               <Button variant="default">
                 Sign In
               </Button>

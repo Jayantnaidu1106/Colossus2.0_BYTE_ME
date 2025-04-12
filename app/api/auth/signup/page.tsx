@@ -51,28 +51,36 @@ export default function SignupPage() {
       })
 
       if (response.data.success) {
-        router.push("/api/auth/signin")
+        // Redirect to login page
+        router.push("/login")
       } else {
         setError(response.data.message || "An error occurred during signup")
       }
     } catch (error: any) {
-      setError(error.response?.data?.message || "An error occurred during signup")
+      console.error("Signup error:", error);
+      setError(error.response?.data?.message || error.response?.data?.error || "An error occurred during signup")
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" })
+    setLoading(true);
+    console.log("Initiating Google sign-up...");
+    // Use redirect: true to let NextAuth handle the redirect flow
+    signIn("google", {
+      callbackUrl: "/dashboard",
+      redirect: true
+    });
   }
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Particles Background */}
       <ParticlesWrapper />
-      
+
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -252,7 +260,7 @@ export default function SignupPage() {
             <p className="text-sm text-gray-400">
               Already have an account?{" "}
               <a
-                href="/api/auth/signin"
+                href="/login"
                 className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
               >
                 Sign in
